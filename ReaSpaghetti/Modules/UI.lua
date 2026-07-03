@@ -45,16 +45,18 @@ function Top_Menu()
                     ClearProject()
                 end
             end
-            if r.ImGui_MenuItem(ctx, 'Open') then
+            if not ACTIVE_TRACK then r.ImGui_BeginDisabled(ctx) end
+            if r.ImGui_MenuItem(ctx, 'Import to Track') then
                 OPEN_FM = true
                 FM_TYPE = "OPEN"
                 Init_FM_database()
             end
-            if r.ImGui_MenuItem(ctx, 'Save as') then
+            if r.ImGui_MenuItem(ctx, 'Export to File') then
                 OPEN_FM = true
                 FM_TYPE = "SAVE"
                 Init_FM_database()
             end
+            if not ACTIVE_TRACK then r.ImGui_EndDisabled(ctx) end
             if r.ImGui_MenuItem(ctx, 'Export to Action') then
                 if not PROJECT_PATH then
                     EXPORT_ACTION_WARNING = true
@@ -1127,7 +1129,6 @@ function Modal_POPUP(text, func)
         if r.ImGui_Button(ctx, 'No', 120, 0) then
             func()
             NEW_WARNIGN = nil
-            if WANT_CLOSE then CLOSE = true end
             r.ImGui_CloseCurrentPopup(ctx)
         end
         r.ImGui_EndPopup(ctx)

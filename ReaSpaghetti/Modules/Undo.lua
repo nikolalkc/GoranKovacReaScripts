@@ -75,6 +75,10 @@ local function RelinkMetatables(node)
     end
 end
 
+function ClearUndo()
+    UNDO = {}
+end
+
 function AddUndo(node, operation)
     if #UNDO == UNDO_LIMIT then
         table.remove(UNDO, 1)

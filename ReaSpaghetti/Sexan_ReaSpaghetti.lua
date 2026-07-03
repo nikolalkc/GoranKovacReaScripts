@@ -69,6 +69,7 @@ require("Modules/CustomFunctions")
 require("Modules/ExportToAction")
 require("Modules/Library")
 require("Modules/Undo")
+require("Modules/TrackState")
 
 if STANDALONE_RUN then return end
 
@@ -124,6 +125,7 @@ local function loop()
 
     UpdateDeltaTime()
     UpdateZoomFont()
+    TrackSelectionWatcher()
     -- r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(),              0x333333FF)
     -- r.ImGui_PushStyleColor(ctx, r.ImGui_Col_WindowBg(),             0x333333FF)
     -- r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(),              0x333333FF)
@@ -225,11 +227,25 @@ local function loop()
         WND_FLAGS)
     TOOLBAR_DRAG = r.ImGui_IsItemHovered(ctx)
     if visible then
-        -- Check for ESC key to exit
-        if r.ImGui_IsKeyPressed(ctx, 27) then -- 27 is ESC key code
-            CLOSE = true
+        -- Check for ESC key to exit (unless a popup is using it)
+        if r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_Escape()) and
+            not r.ImGui_IsPopupOpen(ctx, '', r.ImGui_PopupFlags_AnyPopupId() | r.ImGui_PopupFlags_AnyPopupLevel()) then
+            open = false
         end
-        frame()
+        if not ACTIVE_TRACK then
+            -- NO TRACK SELECTED - GRAPH IS NOT PERSISTED ANYWHERE SO BLOCK EDITING
+            r.ImGui_BeginDisabled(ctx)
+            frame()
+            r.ImGui_EndDisabled(ctx)
+            local wx, wy = r.ImGui_GetWindowPos(ctx)
+            local ww, wh = r.ImGui_GetWindowSize(ctx)
+            local hint = "Select a track to edit its graph"
+            local tw = r.ImGui_CalcTextSize(ctx, hint)
+            r.ImGui_DrawList_AddText(r.ImGui_GetForegroundDrawList(ctx),
+                wx + (ww - tw) / 2, wy + wh / 2, 0xFFFFFFFF, hint)
+        else
+            frame()
+        end
         r.ImGui_End(ctx)
     end
     r.ImGui_PopStyleVar(ctx, 6)
@@ -240,12 +256,8 @@ local function loop()
     end
 
     if not open then
-        if AreFunctionsDirty() then
-            NEW_WARNIGN = true
-            WANT_CLOSE = true
-        else
-            CLOSE = true
-        end
+        SaveGraphToTrack(ACTIVE_TRACK)
+        CLOSE = true
     end
     NEXT_FRAME = true
     if PROFILE_DEBUG and PROFILE_STARTED then

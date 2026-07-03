@@ -235,7 +235,6 @@ function File_dialog()
                 FM_TYPE = nil
                 --OPEN_FM = nil
                 if NEED_SAVE then ClearProject() end
-                if WANT_CLOSE then CLOSE = true end
                 r.ImGui_CloseCurrentPopup(ctx)
             end
         end
@@ -260,11 +259,11 @@ function LoadFile()
     local load_path = path .. os_separator .. filelist.current
     local file = io.open(load_path, "r")
     if file then
-        PROJECT_NAME = filelist.current
         PROJECT_PATH = path .. os_separator
         local string = file:read("*all")
         RestoreNodes(string)
-        --r.ShowConsoleMsg(string)
+        -- IMPORTED GRAPH BELONGS TO THE ACTIVE TRACK NOW - MARK DIRTY SO IT GETS PERSISTED
+        DIRTY = true
         file:close()
         FM_TYPE = nil
         OPEN_FM = nil
@@ -279,9 +278,7 @@ function SaveToFIle(save_path)
     if file then
         file:write(data)
         file:close()
-        PROJECT_NAME = filelist.current_text_input
         PROJECT_PATH = path .. os_separator
-        DIRTY = nil
     end
 end
 
@@ -305,13 +302,11 @@ function FM_Modal_POPUP()
             r.ImGui_CloseCurrentPopup(ctx)
             FM_TYPE = nil
             WANT_CLOSE_FM = true
-            if WANT_CLOSE then CLOSE = true end
             --OPEN_FM = nil
         end
         r.ImGui_SetItemDefaultFocus(ctx)
         r.ImGui_SameLine(ctx)
-        if r.ImGui_Button(ctx, 'Cancel', 120, 0) then 
-            if WANT_CLOSE then WANT_CLOSE = nil end
+        if r.ImGui_Button(ctx, 'Cancel', 120, 0) then
             r.ImGui_CloseCurrentPopup(ctx) end
         r.ImGui_EndPopup(ctx)
     end
