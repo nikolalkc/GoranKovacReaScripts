@@ -508,6 +508,7 @@
         <li><a href="#parse_timestr_pos">parse_timestr_pos</a></li>
         <li><a href="#parsepanstr">parsepanstr</a></li>
         <li><a href="#PCM_Sink_Enum">PCM_Sink_Enum</a></li>
+		<li><a href="#LKC_TC_Trigger">LKC_TC_Trigger</a></li>
         <li><a href="#PCM_Sink_GetExtension">PCM_Sink_GetExtension</a></li>
         <li><a href="#PCM_Sink_ShowConfig">PCM_Sink_ShowConfig</a></li>
         <li><a href="#PCM_Source_BuildPeaks">PCM_Source_BuildPeaks</a></li>
@@ -6327,6 +6328,16 @@ See <a href="#MIDIEditor_GetSetting_int">MIDIEditor_GetSetting_int</a><br>
 	<div class="l_func"><code><em>integer</em> retval, <em>string </em>descstr = reaper.PCM_Sink_Enum(<em>integer</em> idx)</code></div>
 	<div class="p_func"><code><em>Unknown</em>  RPR_PCM_Sink_Enum(<em>Int</em> idx, <em>String</em> descstrOut)</code></div>
 </div>
+
+
+
+<div class="function_definition" id="LKC_TC_Trigger">
+	<div class="l_func"><code><em>integer</em> reaper.LKC_TC_Trigger(<em>MediaTrack</em> Track)</code></div>
+
+</div>
+
+
+
 
 <div class="function_definition" id="PCM_Sink_GetExtension">
 	<div class="c_func"><code>const char* PCM_Sink_GetExtension(const char* data, int data_sz)</code></div>
