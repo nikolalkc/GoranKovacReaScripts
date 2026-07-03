@@ -158,6 +158,7 @@ local NodeCOLOR = {
     ["i"]       = 0x4A7A3AFF, -- muted olive green (integer)
     ["f"]       = 0x339887FF, -- deep teal (float)
     ["b"]       = 0x7A4A8EFF, -- muted purple (boolean)
+    ["trig"]    = 0x7A4A8EFF, -- muted purple (boolean, matches trigger's BOOLEAN pin)
     ["t"]       = 0x15BC99FF, -- REAPER green (table)
     ["tc"]      = 0x15BC99FF, -- TABLE CONSTRUCTOR
     ["set"]     = 0x7A4A8EFF, -- muted purple (set)
@@ -209,6 +210,7 @@ local NodeDLChannel = {
     ["i"]       = 7,
     ["f"]       = 7,
     ["b"]       = 7,
+    ["trig"]    = 7,
     ["n"]       = 7, --8 ACTIVE
     ["m"]       = 7, --8 ACTIVE
     ["t"]       = 7,
@@ -242,6 +244,8 @@ function Create_constant_tbl(type)
             resizeable = true,
             ctrl = { min = 0, max = 1, is_int = false }
         }
+    elseif type == "trig" then
+        tbl = { ins = {}, out = { { name = "", type = "BOOLEAN" } }, trigger_mode = "oneshot", resizeable = true }
     elseif type == "t" then
         tbl = { ins = {}, out = { { name = "", type = "TABLE", def_val = {} } } }
     elseif type == "route" then
@@ -370,7 +374,8 @@ local function Get_Node(type, label, x, y, w, h, guid, tbl)
         wireless_id = tbl.wireless_id,
         can_resize  = tbl.resizeable,
         ctrl        = tbl.ctrl,
-        sp_api      = tbl.sp_api
+        sp_api      = tbl.sp_api,
+        trigger_mode = tbl.trigger_mode
     }
 end
 
@@ -548,6 +553,7 @@ function AddNode(type, name, api_tbl)
     local h = (type == "group" or type == "s") and NODE_CFG.MIN_H or 50
     if type == "slider" then w, h = 200, 70 end
     if type == "knob" then w, h = 100, 115 end
+    if type == "trig" then w, h = 120, 120 end -- BIG SQUARE BUTTON
     local node = Get_Node(type, name, 0, 0, w, h, receiver_guid or r.genGuid(), api_tbl)
     if type == "wr" then node.wireless_id = wireless_id end
     return node
@@ -579,6 +585,10 @@ function FilterBox()
             end
             if r.ImGui_Selectable(ctx, "ADD BOOLEAN", false) then
                 InsertNode("b", "BOOLEAN")
+                DIRTY = true
+            end
+            if r.ImGui_Selectable(ctx, "ADD TRIGGER BUTTON (CONTROLLER)", false) then
+                InsertNode("trig", "TRIGGER")
                 DIRTY = true
             end
             if r.ImGui_Selectable(ctx, "ADD TABLE", false) then
@@ -1235,6 +1245,39 @@ local function Draw_input(node, io_type, pin, x, y, pin_n, h)
             if node.type == "b" then
                 B_RV, pin.i_val = r.ImGui_Checkbox(ctx, pin.label, pin.i_val)
                 if B_RV then pin.o_val = pin.i_val end
+            elseif node.type == "trig" then
+                -- BIG SQUARE BUTTON FILLS THE NODE BODY, LIKE THE SLIDER/KNOB CONTROLLERS
+                local btn_h = (node.h - NODE_CFG.SEGMENT - 8) * CANVAS.scale
+
+                -- FIXED ID/LABEL SO IMGUI DOESN'T TREAT A RELABEL AS A NEW WIDGET (WAS CAUSING FLICKER)
+                -- ONE-SHOT USES A SHORT MANUAL FLASH TIMER SO THE COLOR ALWAYS BLIPS BRIEFLY,
+                -- INSTEAD OF STAYING LIT FOR AS LONG AS THE MOUSE IS HELD DOWN (IMGUI'S NATIVE ACTIVE STATE)
+                local is_on = node.trigger_mode == "hold" and pin.i_val
+                    or (node.flash_until and r.time_precise() < node.flash_until)
+
+                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Button(), is_on and 0x15BC99FF or 0x1E1E1EFF)
+                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ButtonHovered(), is_on and 0x1CD6ADFF or 0x2A2A2AFF)
+                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ButtonActive(), is_on and 0x15BC99FF or 0x2A2A2AFF)
+
+                local pressed = r.ImGui_Button(ctx, "TRIGGER##" .. pin.label, w, btn_h)
+
+                r.ImGui_PopStyleColor(ctx, 3)
+
+                if node.trigger_mode == "hold" then
+                    pin.i_val = r.ImGui_IsItemActive(ctx)
+                else
+                    -- oneshot: ImGui_Button returns true only on the release frame, giving a single-frame pulse
+                    pin.i_val = pressed
+                    -- FLASH STARTS ON MOUSE-DOWN (IsItemActivated), NOT ON RELEASE, FOR IMMEDIATE FEEDBACK
+                    if r.ImGui_IsItemActivated(ctx) then node.flash_until = r.time_precise() + 0.12 end
+                end
+                pin.o_val = pin.i_val
+
+                -- RIGHT CLICK THE BUTTON ITSELF OPENS THE MODE MENU (SAME HOVER-SCOPED PATTERN AS CONTROLLER SETTINGS)
+                if r.ImGui_IsItemHovered(ctx) and r.ImGui_IsMouseReleased(ctx, 1) and not IS_DRAGGING_RIGHT_CANVAS then
+                    TRIG_CTX_NODE = node
+                    OPEN_TRIG_CTX = true
+                end
             else
                 -- if CheckOptional(pin) then
                 --     r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_DisabledAlpha(), 0.3)
@@ -1612,8 +1655,8 @@ local function CalculateNewSize(node)
 
     --local min_h = NODE_CFG.MIN_H --node.type == "group" and NODE_CFG.MIN_H or CalcMinCodeSize(node)
 
-    -- CONTROLLERS CAN GO SMALLER (NARROW VERTICAL SLIDERS, SMALL KNOBS)
-    local is_ctrl = node.type == "slider" or node.type == "knob"
+    -- CONTROLLERS CAN GO SMALLER (NARROW VERTICAL SLIDERS, SMALL KNOBS, SQUARE BUTTONS)
+    local is_ctrl = node.type == "slider" or node.type == "knob" or node.type == "trig"
     local min_w = is_ctrl and 40 or NODE_CFG.MIN_W
     local min_h = is_ctrl and 60 or NODE_CFG.MIN_H
     local new_w = node.w + DX > min_w and node.w - off_x + DX / CANVAS.scale or min_w
@@ -1725,6 +1768,7 @@ local function Draw_Node(node)
         CTRL_SETTINGS_NODE = node
         OPEN_CTRL_SETTINGS = true
     end
+
 
     ---- DRAW NODE
     node.trace = TraceNode()
@@ -2491,6 +2535,15 @@ function PinContextMenu()
         else
             InsertNode(INSERT_NODE_DATA.get_set, INSERT_NODE_DATA.pin_label)
         end
+    end
+end
+
+function TriggerContextMenu(node)
+    if r.ImGui_MenuItem(ctx, "One-Shot", nil, node.trigger_mode == "oneshot") then
+        node.trigger_mode = "oneshot"
+    end
+    if r.ImGui_MenuItem(ctx, "Hold (Momentary)", nil, node.trigger_mode == "hold") then
+        node.trigger_mode = "hold"
     end
 end
 

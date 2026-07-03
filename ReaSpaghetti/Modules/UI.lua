@@ -969,6 +969,13 @@ function Popups()
         end
     end
 
+    if OPEN_TRIG_CTX and not r.ImGui_IsAnyItemActive(ctx) then
+        OPEN_TRIG_CTX = nil
+        if not r.ImGui_IsPopupOpen(ctx, "TRIG_CTX") then
+            r.ImGui_OpenPopup(ctx, "TRIG_CTX")
+        end
+    end
+
     if NEW_WARNIGN then
         if not r.ImGui_IsPopupOpen(ctx, 'Warning') then r.ImGui_OpenPopup(ctx, 'Warning') end
         Modal_POPUP("Save project before closing?", ClearProject)
@@ -1005,6 +1012,12 @@ function Popups()
     -- RIGHT CLICK CONTROLLER (SLIDER/KNOB) SETTINGS
     if r.ImGui_BeginPopup(ctx, "CTRL_SETTINGS") then
         if DrawControllerSettings(CTRL_SETTINGS_NODE) then DIRTY = true end
+        r.ImGui_EndPopup(ctx)
+    end
+
+    -- RIGHT CLICK TRIGGER BUTTON MODE MENU
+    if r.ImGui_BeginPopup(ctx, "TRIG_CTX") then
+        TriggerContextMenu(TRIG_CTX_NODE)
         r.ImGui_EndPopup(ctx)
     end
 

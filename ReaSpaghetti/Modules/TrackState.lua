@@ -48,7 +48,16 @@ function LoadGraphFromTrack(track)
 end
 
 local watcher_initialized
+local ACTIVE_PROJECT
 function TrackSelectionWatcher()
+    local proj = r.EnumProjects(-1)
+    if watcher_initialized and proj ~= ACTIVE_PROJECT then
+        -- PROJECT TAB SWITCHED - FLUSH CURRENT GRAPH TO ITS TRACK BEFORE THE OLD TRACK POINTER GOES STALE
+        SaveGraphToTrack(ACTIVE_TRACK)
+        ACTIVE_TRACK = nil
+    end
+    ACTIVE_PROJECT = proj
+
     local sel = r.GetSelectedTrack(0, 0)
     if watcher_initialized and sel == ACTIVE_TRACK then return end
     watcher_initialized = true
