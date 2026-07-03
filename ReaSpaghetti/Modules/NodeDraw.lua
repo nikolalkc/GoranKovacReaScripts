@@ -31,13 +31,13 @@ local NODE_CFG = {
     PIN_MOVE_OUT = 10,
     EDGE_THICKNESS = 2,
     PIN_BTN_W_EXTEND = 1.5, -- CANNOT BE 0 (EXTEND PIN HITBOX)
-    LABEL_COL = 0x000000FF,
-    PIN_LABEL_COL = 0xFFFFFFFF,
+    LABEL_COL = 0xF0F0F0FF, -- REAPER 7: near-white label text
+    PIN_LABEL_COL = 0xD0D0D0FF, -- REAPER 7: light gray pin labels
     INPUT_OFFSET = 70
 }
 
-WIRE_COL = 0x11BBFFFF
-DELETE_COL = 0xFF1111FF
+WIRE_COL = 0x15BC99FF  -- REAPER green wire
+DELETE_COL = 0xC0392BFF -- REAPER 7: muted red delete
 
 function CntSelNodes()
     local cnt_tbl = {}
@@ -144,41 +144,41 @@ function GetVariableTBL(NODES)
 end
 
 local NodeCOLOR = {
-    ["func"]    = 0xFFceffff,
-    ["retnode"] = 0xFFceffff,
-    ["n"]       = 0x88ceffff,
-    ["m"]       = 0x88ceffff,
-    ["s"]       = 0x00ddffff,
-    ["i"]       = 0xbeff85ff,
-    ["f"]       = 0x88ceffff,
-    ["b"]       = 0xd365ffff,
-    ["t"]       = 0x618cffff,
-    ["tc"]      = 0x618cffff, -- TABLE CONSTRUCTOR
-    ["set"]     = 0xac5cd9ff,
-    ["get"]     = 0x39da8aff,
-    ["api"]     = 0x88ceffff, --88ceffff
-    ["bg"]      = 0x28293dFF, --0x111111FF
-    ["sel"]     = 0x00FF22FF,
-    ["warning"] = 0xF44336FF,
-    ["route"]   = 0x88ceffff,
-    ["ws"]      = 0x88ceffff,
-    ["wr"]      = 0x88ceffff,
-    ["api_var"] = 0xac5cd9ff,
-    ["group"]   = 0x00fffbff,
-    ["groupbg"] = 0x00fffb11,
-    ["code"]    = 0x88ceffff,
+    ["func"]    = 0x15BC99FF, -- REAPER green (function nodes)
+    ["retnode"] = 0x15BC99FF, -- REAPER green
+    ["n"]       = 0x339887FF, -- deep teal (numeric)
+    ["m"]       = 0x339887FF, -- deep teal
+    ["s"]       = 0x2E7D6CFF, -- darker teal (string)
+    ["i"]       = 0x4A7A3AFF, -- muted olive green (integer)
+    ["f"]       = 0x339887FF, -- deep teal (float)
+    ["b"]       = 0x7A4A8EFF, -- muted purple (boolean)
+    ["t"]       = 0x15BC99FF, -- REAPER green (table)
+    ["tc"]      = 0x15BC99FF, -- TABLE CONSTRUCTOR
+    ["set"]     = 0x7A4A8EFF, -- muted purple (set)
+    ["get"]     = 0x2E7D5AFF, -- muted green (get)
+    ["api"]     = 0x15BC99FF, -- REAPER green (api)
+    ["bg"]      = 0x252526FF, -- dark charcoal node body
+    ["sel"]     = 0xE8A838FF, -- amber/orange selection highlight
+    ["warning"] = 0xC0392BFF, -- muted red warning
+    ["route"]   = 0x15BC99FF, -- REAPER green
+    ["ws"]      = 0x15BC99FF, -- REAPER green
+    ["wr"]      = 0x15BC99FF, -- REAPER green
+    ["api_var"] = 0x7A4A8EFF, -- muted purple
+    ["group"]   = 0x15BC99FF, -- REAPER green (group border)
+    ["groupbg"] = 0x15BC9914, -- REAPER green very subtle fill
+    ["code"]    = 0x15BC99FF, -- REAPER green
 }
 
 local PinCOLOR = {
-    ["ANY"]            = 0x00FFFFFF,
-    ["NUMBER/INTEGER"] = 0xfdad5aFF,
-    ["INTEGER"]        = 0xF44336FF,
-    ["NUMBER"]         = 0xfdad5aFF,
-    ["STRING"]         = 0x00ddffff,
-    ["BOOLEAN"]        = 0xd365ffff,
-    ["TABLE"]          = 0x618cffff,
-    ["RUN"]            = 0x11FF11FF,
-    ["UNKNOWN"]        = 0xFFFFFFFF
+    ["ANY"]            = 0xC8C8C8FF, -- light gray
+    ["NUMBER/INTEGER"] = 0xD4923AFF, -- amber/orange
+    ["INTEGER"]        = 0xC0392BFF, -- muted red
+    ["NUMBER"]         = 0xD4923AFF, -- amber/orange
+    ["STRING"]         = 0x2E9E8AFF, -- teal
+    ["BOOLEAN"]        = 0x9B59B6FF, -- purple
+    ["TABLE"]          = 0x15BC99FF, -- REAPER green
+    ["RUN"]            = 0x5AAF5AFF, -- muted green (execution flow)
+    ["UNKNOWN"]        = 0xA0A0A0FF  -- medium gray
 }
 
 local PinType = {
@@ -1122,7 +1122,7 @@ local function Draw_input(node, io_type, pin, x, y, pin_n, h)
         r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_FramePadding(), pad_x, pad_y * CANVAS.scale)
 
         r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_FrameRounding(), 5)
-        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_FrameBg(), 0x17181fff)
+        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_FrameBg(), 0x1E1E1EFF) -- REAPER 7: dark input bg
 
         DrawOptionalCheckbox(pin, node)
         if CheckOptional(pin) then
@@ -1438,7 +1438,7 @@ local function Warning_box(node, x, y)
 
     local w, h = r.ImGui_CalcTextSize(ctx, txt)
     r.ImGui_SetNextWindowPos(ctx, x + 5, y - 10 - h)
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x110000FF)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x2C0E0EFF) -- REAPER 7: dark red warning bg
 
     if r.ImGui_BeginChild(ctx, "##warning_ch" .. node.guid, (w + 15), (h + 10), 10, r.ImGui_WindowFlags_NoInputs()
             | r.ImGui_WindowFlags_NoDecoration()
@@ -1459,7 +1459,7 @@ end
 local function RenameInPlace(node, x, y, w, title_h)
     r.ImGui_SetCursorScreenPos(ctx, x, y + title_h / 8)
     r.ImGui_SetNextItemWidth(ctx, w)
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Text(), 0x000000FF)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Text(), 0xF0F0F0FF) -- REAPER 7: near-white rename text
     r.ImGui_PushFont(ctx, FONT)
     CenterTextPush(node.label, "RUN")
     r.ImGui_SetKeyboardFocusHere(ctx)
@@ -1713,7 +1713,7 @@ local function Draw_Node(node)
         --local pad_y = select(2, r.ImGui_GetStyleVar(ctx, r.ImGui_StyleVar_FramePadding()))
         local _, th = r.ImGui_CalcTextSize(ctx, tostring(node.text) .. '\x20')
         th = th + (pad_y * 2)
-        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_FrameBg(), 0x00000088)
+        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_FrameBg(), 0x1A1A1A99) -- REAPER 7: dark comment bg
         r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_FrameBorderSize(), 1)
         r.ImGui_SetCursorScreenPos(ctx, x, y - th - (10 * CANVAS.scale))
         _, node.text = r.ImGui_InputTextMultiline(ctx, '##text' .. node.guid, node.text, w, th)

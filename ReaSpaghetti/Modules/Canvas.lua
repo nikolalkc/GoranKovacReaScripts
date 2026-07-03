@@ -104,12 +104,12 @@ local function DrawGrid()
     local GRID_STEP = 64.0 * CANVAS.scale
     local x = math.fmod(CANVAS.off_x, GRID_STEP)
     while x < CANVAS_sz[1] do
-        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1] + x, CANVAS_p0[2], CANVAS_p0[1] + x, CANVAS_p1[2], 0xc8c8c812)
+        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1] + x, CANVAS_p0[2], CANVAS_p0[1] + x, CANVAS_p1[2], 0x4A4A4A18) -- REAPER 7: subtle grid
         x = x + GRID_STEP
     end
     local y = math.fmod(CANVAS.off_y, GRID_STEP)
     while y < CANVAS_sz[2] do
-        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1], CANVAS_p0[2] + y, CANVAS_p1[1], CANVAS_p0[2] + y, 0xc8c8c812)
+        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1], CANVAS_p0[2] + y, CANVAS_p1[1], CANVAS_p0[2] + y, 0x4A4A4A18) -- REAPER 7: subtle grid
         y = y + GRID_STEP
     end
 end
@@ -133,8 +133,8 @@ local function Draw_MARQUEE()
             w = abs(MQ_dx) / CANVAS.scale,
             h = abs(MQ_dy) / CANVAS.scale,
         }
-        r.ImGui_DrawList_AddRectFilled(DL, mpx, mpy, mpx + MQ_dx, mpy + MQ_dy, 0xFFFFFF11)
-        r.ImGui_DrawList_AddRect(DL, mpx, mpy, mpx + MQ_dx, mpy + MQ_dy, 0x607EAAAA)
+        r.ImGui_DrawList_AddRectFilled(DL, mpx, mpy, mpx + MQ_dx, mpy + MQ_dy, 0xE8A83811) -- REAPER 7: amber marquee fill
+        r.ImGui_DrawList_AddRect(DL, mpx, mpy, mpx + MQ_dx, mpy + MQ_dy, 0xE8A838AA) -- REAPER 7: amber marquee border
     else
         if r.ImGui_IsMouseReleased(ctx, 0) and MARQUEE then
             MARQUEE = nil

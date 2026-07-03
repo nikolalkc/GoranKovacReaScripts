@@ -168,7 +168,7 @@ end
 function File_dialog()
     local path_buttons = PathButtons()
     if r.ImGui_BeginListBox(ctx, "##frame", -FLT_MIN, -23) then
-        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Text(), 0x55D8FFFF)
+        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Text(), 0x15BC99FF) -- REAPER green folder text
         local dirs, files = filelist.dirs, filelist.files
         if path_buttons > 1 then
             if r.ImGui_Selectable(ctx, '..', filelist.current == entry, r.ImGui_SelectableFlags_AllowDoubleClick()) then

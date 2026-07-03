@@ -100,7 +100,7 @@ local function DBGNode()
 
     local dbg_str = cur_node and INSPECT(cur_node) or ""
 
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x000000EE)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x1A1A1AEE) -- REAPER 7: dark panel bg
     r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_WindowPadding(), 5, 5)
     r.ImGui_SetCursorPos(ctx, 250, 35)
     if r.ImGui_BeginChild(ctx, 'NodeDBG', -5, DEBUG_N_VISIBLE and 500 or 23, true, r.ImGui_WindowFlags_NoScrollbar()) then
@@ -120,7 +120,7 @@ local function DBGMsg()
     local avail_w = r.ImGui_GetContentRegionAvail(ctx)
     r.ImGui_SameLine(ctx, avail_w - 300)
 
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x000000EE)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x1A1A1AEE) -- REAPER 7: dark panel bg
     r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_WindowPadding(), 5, 5)
     if r.ImGui_BeginChild(ctx, 'right_side', -5, DEBUG_VISIBLE and 27 + #LEGO_MGS * 13 or 23, true, r.ImGui_WindowFlags_NoScrollbar()) then
         DEBUG_VISIBLE = r.ImGui_TreeNode(ctx, 'Debug MSG - MESSAGES : ' .. #LEGO_MGS,
@@ -424,7 +424,7 @@ local function FunctionIO2(func)
         end
         r.ImGui_PopID(ctx)
         if #func.inputs > 0 then
-            r.ImGui_PushStyleColor(ctx, r.ImGui_Col_FrameBg(), 0x000000FF)
+            r.ImGui_PushStyleColor(ctx, r.ImGui_Col_FrameBg(), 0x1E1E1EFF) -- REAPER 7: dark input bg
             if r.ImGui_BeginListBox(ctx, "##ARGUMENTS", avail_w / 2, -1) then
                 for inp = 1, #func.inputs do
                     local cur_type = func.inputs[inp].type
@@ -498,7 +498,7 @@ local function FunctionIO2(func)
         r.ImGui_PopID(ctx)
 
         if #func.outputs > 0 then
-            r.ImGui_PushStyleColor(ctx, r.ImGui_Col_FrameBg(), 0x000000FF)
+            r.ImGui_PushStyleColor(ctx, r.ImGui_Col_FrameBg(), 0x1E1E1EFF) -- REAPER 7: dark input bg
             if r.ImGui_BeginListBox(ctx, "##RETURNS", avail_w / 2, -1) then
                 for out = 1, #func.outputs do
                     local cur_type = func.outputs[out].type
@@ -605,7 +605,7 @@ function DeferTest()
     end
     r.ImGui_SameLine(ctx)
     if DEFERED_NODE then
-        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Button(), 0x00FF00AA)
+        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Button(), 0x2E7D5AEE) -- REAPER 7: muted green active run
     end
     if r.ImGui_Button(ctx, "STOP") then
         if DEFERED_NODE then
@@ -625,8 +625,13 @@ end
 function UI_Buttons()
     r.ImGui_SetCursorPos(ctx, 5, 5)
     -- NIFTY HACK FOR COMMENT BOX NOT OVERLAP UI BUTTONS
-    if not r.ImGui_BeginChild(ctx, 'toolbars', -FLT_MIN, -FLT_MIN, false, r.ImGui_WindowFlags_NoInputs()) then return end
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x000000EE)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x00000000) -- transparent overlay
+    if not r.ImGui_BeginChild(ctx, 'toolbars', -FLT_MIN, -FLT_MIN, false, r.ImGui_WindowFlags_NoInputs()) then
+        r.ImGui_PopStyleColor(ctx)
+        return
+    end
+    r.ImGui_PopStyleColor(ctx)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x1A1A1AEE) -- REAPER 7: dark panel bg
 
     r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_WindowPadding(), 0, 0)
     if r.ImGui_BeginChild(ctx, "TopButtons", 420, 25, 1) then
@@ -755,11 +760,11 @@ function Sidebar()
 
             local col
             if final_tbl[i].type == "get" then
-                col = 0x00FF00FF
+                col = 0x5AAF5AFF -- REAPER 7: muted green (get)
             elseif final_tbl[i].type == "set" then
-                col = 0x00FFFFFF
+                col = 0x15BC99FF -- REAPER green (set)
             else
-                col = 0xFFFFFFFF
+                col = 0xD0D0D0FF -- REAPER 7: light gray (default)
             end
 
             if CUR_TAB == "VARS" then
@@ -1057,7 +1062,7 @@ function Popups()
     end
 
     r.ImGui_SetNextWindowPos(ctx, center[1], center[2], r.ImGui_Cond_Appearing(), 0.5, 0.5)
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x000000FF)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x252526FF) -- REAPER 7: dark charcoal popup bg
     if r.ImGui_BeginPopup(ctx, "Help") then
         r.ImGui_Text(ctx, table.concat(help_tbl, "\n"))
         r.ImGui_EndPopup(ctx)
@@ -1069,7 +1074,7 @@ function Popups()
         PREFERENCES = nil
     end
     r.ImGui_SetNextWindowPos(ctx, center[1], center[2], r.ImGui_Cond_Appearing(), 0.5, 0.5)
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x000000FF)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x252526FF) -- REAPER 7: dark charcoal popup bg
     if r.ImGui_BeginPopup(ctx, "PREFERENCES") then
         _, TOOLTIP = r.ImGui_Checkbox(ctx, "Tooltips", TOOLTIP)
         _, DEBUG = r.ImGui_Checkbox(ctx, "DEBUG", DEBUG)
