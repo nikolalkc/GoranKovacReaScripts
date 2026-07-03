@@ -1259,17 +1259,17 @@ local function Draw_input(node, io_type, pin, x, y, pin_n, h)
                 r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ButtonHovered(), is_on and 0x1CD6ADFF or 0x2A2A2AFF)
                 r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ButtonActive(), is_on and 0x15BC99FF or 0x2A2A2AFF)
 
-                local pressed = r.ImGui_Button(ctx, "TRIGGER##" .. pin.label, w, btn_h)
+                r.ImGui_Button(ctx, "TRIGGER##" .. pin.label, w, btn_h)
 
                 r.ImGui_PopStyleColor(ctx, 3)
 
                 if node.trigger_mode == "hold" then
                     pin.i_val = r.ImGui_IsItemActive(ctx)
                 else
-                    -- oneshot: ImGui_Button returns true only on the release frame, giving a single-frame pulse
-                    pin.i_val = pressed
-                    -- FLASH STARTS ON MOUSE-DOWN (IsItemActivated), NOT ON RELEASE, FOR IMMEDIATE FEEDBACK
-                    if r.ImGui_IsItemActivated(ctx) then node.flash_until = r.time_precise() + 0.12 end
+                    -- oneshot: pulse true only on the mouse-down (activation) frame
+                    local activated = r.ImGui_IsItemActivated(ctx)
+                    pin.i_val = activated
+                    if activated then node.flash_until = r.time_precise() + 0.12 end
                 end
                 pin.o_val = pin.i_val
 
