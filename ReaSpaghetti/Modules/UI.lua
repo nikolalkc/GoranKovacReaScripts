@@ -603,7 +603,19 @@ function DeferTest()
         r.ImGui_SetKeyboardFocusHere(ctx)
         LEGO_MGS = {}
         ClearNodesWarning()
+        RUN_ACTIVE = true
+        SHOW_FLOW = true
         InitRunFlow()
+    elseif RUN_ACTIVE and DEFERED_NODE then
+        -- KEEP RE-RUNNING THE DEFERRED FLOW EVERY FRAME WHILE THE SPAGHETTI DEFER NODE IS ACTIVE
+        InitRunFlow()
+    end
+
+    if RUN_ACTIVE and not DEFERED_NODE then
+        -- SPAGHETTI DEFER (OR THE SINGLE-SHOT RUN) HAS FULLY HALTED
+        RUN_ACTIVE = false
+        SHOW_FLOW = false
+        LEGO_MGS[#LEGO_MGS + 1] = BREAK_RUN and "RUN STOPPED (error)" or "RUN COMPLETE"
     end
     r.ImGui_SameLine(ctx)
     if DEFERED_NODE then
@@ -639,8 +651,6 @@ function UI_Buttons()
     if r.ImGui_BeginChild(ctx, "TopButtons", 420, 25, 1) then
         r.ImGui_SetCursorPos(ctx, 4, 3)
         if r.ImGui_Checkbox(ctx, "GRID", GRID) then GRID = not GRID end
-        r.ImGui_SameLine(ctx)
-        if r.ImGui_Checkbox(ctx, "WIRE FLOW", SHOW_FLOW) then SHOW_FLOW = not SHOW_FLOW end
         r.ImGui_SameLine(ctx)
         if r.ImGui_Button(ctx, "CENTER VIEW") then
             FLUX.to(CANVAS, 0.5, { off_x = CANVAS.rx / 2 - 100 * CANVAS.scale, off_y = CANVAS.ry / 2 }):ease("cubicout")
