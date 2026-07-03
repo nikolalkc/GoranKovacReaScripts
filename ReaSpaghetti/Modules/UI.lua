@@ -840,7 +840,7 @@ function Sidebar()
                     --         --GETTER_INFO = final_tbl[i]
                     --         DRAG_LIST_NODE = AddNode("get", "GET " .. final_tbl[i].label)
                     --     end
-                    if final_tbl[i].type == "i" or final_tbl[i].type == "f" or final_tbl[i].type == "s" or final_tbl[i].type == "b" or final_tbl[i].type == "t" or final_tbl[i].type == "tc" or final_tbl[i].type == "api_var" then
+                    if final_tbl[i].type == "i" or final_tbl[i].type == "f" or final_tbl[i].type == "s" or final_tbl[i].type == "b" or final_tbl[i].type == "t" or final_tbl[i].type == "tc" or final_tbl[i].type == "slider" or final_tbl[i].type == "knob" or final_tbl[i].type == "api_var" then
                         if not DRAG_LIST_NODE then
                             DRAG_LIST_NODE_ID = i
                             DRAG_LIST_NODE = AddNode(final_tbl[i].type, final_tbl[i].label)
@@ -962,6 +962,13 @@ function Popups()
         end
     end
 
+    if OPEN_CTRL_SETTINGS and not r.ImGui_IsAnyItemActive(ctx) then
+        OPEN_CTRL_SETTINGS = nil
+        if not r.ImGui_IsPopupOpen(ctx, "CTRL_SETTINGS") then
+            r.ImGui_OpenPopup(ctx, "CTRL_SETTINGS")
+        end
+    end
+
     if NEW_WARNIGN then
         if not r.ImGui_IsPopupOpen(ctx, 'Warning') then r.ImGui_OpenPopup(ctx, 'Warning') end
         Modal_POPUP("Save project before closing?", ClearProject)
@@ -992,6 +999,12 @@ function Popups()
         MOUSE_POPUP_X, MOUSE_POPUP_Y = r.ImGui_GetMousePosOnOpeningCurrentPopup(ctx)
 
         PinContextMenu()
+        r.ImGui_EndPopup(ctx)
+    end
+
+    -- RIGHT CLICK CONTROLLER (SLIDER/KNOB) SETTINGS
+    if r.ImGui_BeginPopup(ctx, "CTRL_SETTINGS") then
+        if DrawControllerSettings(CTRL_SETTINGS_NODE) then DIRTY = true end
         r.ImGui_EndPopup(ctx)
     end
 
@@ -1175,7 +1188,7 @@ function CheckWindowPayload()
                 OPEN_FILTER = true
             else
                 if tbl_type == "out" then
-                    if node_type == "i" or node_type == "f" or node_type == "s" or node_type == "b" or node_type == "t" or node_type == "tc" or node_type == "api_var" then
+                    if node_type == "i" or node_type == "f" or node_type == "s" or node_type == "b" or node_type == "t" or node_type == "tc" or node_type == "slider" or node_type == "knob" or node_type == "api_var" then
                         INSERT_NODE_DATA = nil
                         return
                     end

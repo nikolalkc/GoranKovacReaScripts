@@ -289,6 +289,8 @@ local function ResetVars(tbl)
         if node.type == "s" or
             node.type == "i" or
             node.type == "f" or
+            node.type == "slider" or
+            node.type == "knob" or
             node.type == "b" then
             -- INPUT IS ALWAYS UNCHANGED SO RESET OUTPUT VALUE TO INPUT
             node.outputs[1].o_val = node.outputs[1].i_val

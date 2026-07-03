@@ -105,6 +105,8 @@ function GetVariableGETSETTBL()
                 FUNCTIONS[1].NODES[i].type == "t" or
                 FUNCTIONS[1].NODES[i].type == "tc" or
                 FUNCTIONS[1].NODES[i].type == "f" or
+                FUNCTIONS[1].NODES[i].type == "slider" or
+                FUNCTIONS[1].NODES[i].type == "knob" or
                 --FUNCTIONS[1].NODES[i].type == "get" or
                 FUNCTIONS[1].NODES[i].type == "api_var" then
                 --FUNCTIONS[1].NODES[i].type == "set" then
@@ -120,6 +122,8 @@ function GetVariableGETSETTBL()
             NODES[i].type == "b" or
             NODES[i].type == "t" or
             NODES[i].type == "tc" or
+            NODES[i].type == "slider" or
+            NODES[i].type == "knob" or
             --NODES[i].type == "get" or
             NODES[i].type == "api_var" then
             --NODES[i].type == "set" then
@@ -136,6 +140,8 @@ function GetVariableTBL(NODES)
             NODES[i].type == "i" or
             NODES[i].type == "f" or
             NODES[i].type == "t" or
+            NODES[i].type == "slider" or
+            NODES[i].type == "knob" or
             NODES[i].type == "b" then
             var_tbl[#var_tbl + 1] = NODES[i]
         end
@@ -164,6 +170,8 @@ local NodeCOLOR = {
     ["ws"]      = 0x15BC99FF, -- REAPER green
     ["wr"]      = 0x15BC99FF, -- REAPER green
     ["api_var"] = 0x7A4A8EFF, -- muted purple
+    ["slider"]  = 0xD4923AFF, -- amber (controller, matches NUMBER pin)
+    ["knob"]    = 0xD4923AFF, -- amber (controller, matches NUMBER pin)
     ["group"]   = 0x15BC99FF, -- REAPER green (group border)
     ["groupbg"] = 0x15BC9914, -- REAPER green very subtle fill
     ["code"]    = 0x15BC99FF, -- REAPER green
@@ -211,6 +219,8 @@ local NodeDLChannel = {
     ["ws"]      = 7,
     ["wr"]      = 7,
     ["api_var"] = 7,
+    ["slider"]  = 7,
+    ["knob"]    = 7,
     ["group"]   = 5,
     ["code"]    = 7,
 }
@@ -225,6 +235,13 @@ function Create_constant_tbl(type)
         tbl = { ins = {}, out = { { name = "", type = "NUMBER" } } }
     elseif type == "b" then
         tbl = { ins = {}, out = { { name = "", type = "BOOLEAN" } } }
+    elseif type == "slider" or type == "knob" then
+        tbl = {
+            ins = {},
+            out = { { name = "", type = "NUMBER", def_val = 0 } },
+            resizeable = true,
+            ctrl = { min = 0, max = 1, is_int = false }
+        }
     elseif type == "t" then
         tbl = { ins = {}, out = { { name = "", type = "TABLE", def_val = {} } } }
     elseif type == "route" then
@@ -352,6 +369,7 @@ local function Get_Node(type, label, x, y, w, h, guid, tbl)
         receiver    = tbl.receiver,
         wireless_id = tbl.wireless_id,
         can_resize  = tbl.resizeable,
+        ctrl        = tbl.ctrl,
         sp_api      = tbl.sp_api
     }
 end
@@ -528,6 +546,8 @@ function AddNode(type, name, api_tbl)
     local wireless_id = type == "wr" and NODES[#NODES].wireless_id or nil
     local w = (type == "group" or type == "s") and NODE_CFG.MIN_W or 100
     local h = (type == "group" or type == "s") and NODE_CFG.MIN_H or 50
+    if type == "slider" then w, h = 200, 70 end
+    if type == "knob" then w, h = 100, 115 end
     local node = Get_Node(type, name, 0, 0, w, h, receiver_guid or r.genGuid(), api_tbl)
     if type == "wr" then node.wireless_id = wireless_id end
     return node
@@ -584,6 +604,14 @@ function FilterBox()
             end
             if r.ImGui_Selectable(ctx, "ADD CODE NODE", false) then
                 InsertNode("code", "CODE")
+                DIRTY = true
+            end
+            if r.ImGui_Selectable(ctx, "ADD SLIDER (CONTROLLER)", false) then
+                InsertNode("slider", "SLIDER")
+                DIRTY = true
+            end
+            if r.ImGui_Selectable(ctx, "ADD KNOB (CONTROLLER)", false) then
+                InsertNode("knob", "KNOB")
                 DIRTY = true
             end
         end
@@ -1132,7 +1160,11 @@ local function Draw_input(node, io_type, pin, x, y, pin_n, h)
 
         r.ImGui_SetNextItemWidth(ctx, pin.opt and w - 30 * CANVAS.scale or w)
 
-        if pin.type == "INTEGER" then
+        if node.type == "slider" or node.type == "knob" then
+            -- CONTROLLER WIDGET FILLS THE NODE BODY (STAYS LIVE DURING DEFER RUNS)
+            DrawControllerWidget(node, pin, x, y - h - (1 * CANVAS.scale), w,
+                (node.h - NODE_CFG.SEGMENT - 8) * CANVAS.scale)
+        elseif pin.type == "INTEGER" then
             local separator = node.type == "i" and "" or " : "
             if node.type == "i" then
                 I_RV, pin.i_val = r.ImGui_DragInt(ctx, "##" .. pin.label, pin.i_val, 1, 0, nil,
@@ -1580,8 +1612,12 @@ local function CalculateNewSize(node)
 
     --local min_h = NODE_CFG.MIN_H --node.type == "group" and NODE_CFG.MIN_H or CalcMinCodeSize(node)
 
-    local new_w = node.w + DX > NODE_CFG.MIN_W and node.w - off_x + DX / CANVAS.scale or NODE_CFG.MIN_W
-    local new_h = node.h + DY > NODE_CFG.MIN_H and node.h - off_y + DY / CANVAS.scale or NODE_CFG.MIN_H
+    -- CONTROLLERS CAN GO SMALLER (NARROW VERTICAL SLIDERS, SMALL KNOBS)
+    local is_ctrl = node.type == "slider" or node.type == "knob"
+    local min_w = is_ctrl and 40 or NODE_CFG.MIN_W
+    local min_h = is_ctrl and 60 or NODE_CFG.MIN_H
+    local new_w = node.w + DX > min_w and node.w - off_x + DX / CANVAS.scale or min_w
+    local new_h = node.h + DY > min_h and node.h - off_y + DY / CANVAS.scale or min_h
     node.w = new_w
     node.h = new_h
 end
@@ -1682,6 +1718,12 @@ local function Draw_Node(node)
     r.ImGui_InvisibleButton(ctx, "##" .. node.guid, w - edge_offset, title_h - edge_offset)
     if r.ImGui_IsItemHovered(ctx) and r.ImGui_IsMouseDoubleClicked(ctx, 0) then
         NodeDoubleClick(node)
+    end
+    -- RIGHT CLICK TITLE OPENS CONTROLLER SETTINGS (MIN/MAX/INT MODE)
+    if (node.type == "slider" or node.type == "knob") and r.ImGui_IsItemHovered(ctx) and
+        r.ImGui_IsMouseReleased(ctx, 1) and not IS_DRAGGING_RIGHT_CANVAS then
+        CTRL_SETTINGS_NODE = node
+        OPEN_CTRL_SETTINGS = true
     end
 
     ---- DRAW NODE
