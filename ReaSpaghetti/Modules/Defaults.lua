@@ -10,6 +10,12 @@ EDGE_SCROLLING_SPEED = 5
 -- ENABLE GRID
 GRID = true
 
+-- BACKGROUND COLOR TOGGLE
+-- false = current gray bg, true = attached (sampled) bg
+BG_ATTACHED = false
+BG_COLOR_CURRENT  = 0x333333ff -- current gray bg
+BG_COLOR_ATTACHED = 0x181818ff -- attached bg (rgb 40,40,40)
+
 -- THRESHOLD FOR NEW PROJECT SAVE PROMPT
 NEW_PROJECT_NODE_CONDITION = 1
 

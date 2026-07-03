@@ -659,9 +659,11 @@ function UI_Buttons()
     r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x1A1A1AEE) -- REAPER 7: dark panel bg
 
     r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_WindowPadding(), 0, 0)
-    if r.ImGui_BeginChild(ctx, "TopButtons", 420, 25, 1) then
+    if r.ImGui_BeginChild(ctx, "TopButtons", 490, 25, 1) then
         r.ImGui_SetCursorPos(ctx, 4, 3)
         if r.ImGui_Checkbox(ctx, "GRID", GRID) then GRID = not GRID end
+        r.ImGui_SameLine(ctx)
+        if r.ImGui_Checkbox(ctx, "BG", BG_ATTACHED) then BG_ATTACHED = not BG_ATTACHED end
         r.ImGui_SameLine(ctx)
         if r.ImGui_Button(ctx, "CENTER VIEW") then
             FLUX.to(CANVAS, 0.5, { off_x = CANVAS.rx / 2 - 100 * CANVAS.scale, off_y = CANVAS.ry / 2 }):ease("cubicout")

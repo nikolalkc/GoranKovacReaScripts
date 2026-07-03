@@ -182,9 +182,10 @@ local function loop()
     -- r.ImGui_PushStyleColor(ctx, r.ImGui_Col_NavCursor(),            0x42FA6EFF)
 
 
-        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x333333ff) -- 0x333333ff  LKC -- GRAY BG
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_WindowBg(), 0x333333ff) -- 0x333333ff LKC - GRAY BG
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x333333ff) -- 0x333333ff LKC - GRAY BG
+    local BG_COLOR = BG_ATTACHED and BG_COLOR_ATTACHED or BG_COLOR_CURRENT
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), BG_COLOR) -- LKC -- toggleable BG
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_WindowBg(), BG_COLOR) -- LKC -- toggleable BG
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), BG_COLOR) -- LKC -- toggleable BG
     r.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TitleBgActive(), 0x2D4F47FF)
     reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGripHovered(), 0x42FAD1AB)
     reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGripActive(), 0x42FAD1F2)
