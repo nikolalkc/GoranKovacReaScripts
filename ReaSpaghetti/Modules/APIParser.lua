@@ -1215,6 +1215,20 @@ function Fill_Api_list()
     }
 
     api[#api + 1] = {
+        fname = "CUSTOM_MultiOr",
+        label = "Multi OR",
+        desc = "N-input LOGICAL OR\nReturns TRUE if ANY input is TRUE.\nOpen Node Inspector to add/remove inputs",
+        ins = {
+            { name = "INP 1", type = "BOOLEAN" },
+            { name = "INP 2", type = "BOOLEAN" },
+        },
+        out = {
+            { name = "BOOLEAN", type = "BOOLEAN" }
+        },
+        run = "in/out"
+    }
+
+    api[#api + 1] = {
         fname = "CUSTOM_MultiIfElse",
         label = "Multi IF-ELSE",
         desc = "Open Node Inspector to add/remove inputs",

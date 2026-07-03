@@ -394,6 +394,18 @@ function TraceFlow(NODES)
     return FLOW
 end
 
+-- HALTS ANY IN-PROGRESS/DEFERRED RUN BEFORE THE GRAPH IT BELONGS TO IS UNLOADED
+-- (TRACK OR PROJECT SWITCH) SO NO STALE NODE REFERENCES SURVIVE INTO THE NEXT GRAPH
+function StopFlowExecution()
+    DEFERED_NODE = nil
+    RUN_ACTIVE = false
+    BREAK_RUN = nil
+    SHOW_FLOW = false
+    FOLLOW_WARNING = nil
+    LAST_NODE = nil
+    LEGO_MGS = {}
+end
+
 function InitRunFlow()
     local start_func = DEFERED_NODE and 2 or 1
     local FUNCTIONS = GetFUNCTIONS()

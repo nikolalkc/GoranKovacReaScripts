@@ -158,6 +158,10 @@ local function TableSpecial(node)
                 local ins = { { name = "INP " .. #node.inputs, type = "BOOLEAN" } }
                 local inputs = CreateInputs("in", ins)
                 node.inputs[#node.inputs + 1] = inputs[1]
+            elseif node.fname == "CUSTOM_MultiOr" then
+                local ins = { { name = "INP " .. #node.inputs + 1, type = "BOOLEAN" } }
+                local inputs = CreateInputs("in", ins)
+                node.inputs[#node.inputs + 1] = inputs[1]
             elseif node.fname == "CUSTOM_MultiIfElseifElse" then
                 local ins = { { name = "INP " .. #node.inputs + 1, type = "BOOLEAN" } }
                 local inputs = CreateInputs("in", ins)
@@ -191,6 +195,13 @@ local function TableSpecial(node)
             end
         else
             if node.fname == "CUSTOM_MultiIfElse" then
+                if #node.inputs > 2 then
+                    -- DELETE ALL CONNECTIONS TO THIS PIN
+                    Delete_Wire(node.inputs[#node.inputs].connection)
+                    table.remove(node.in_values, #node.in_values)
+                    table.remove(node.inputs, #node.inputs)
+                end
+            elseif node.fname == "CUSTOM_MultiOr" then
                 if #node.inputs > 2 then
                     -- DELETE ALL CONNECTIONS TO THIS PIN
                     Delete_Wire(node.inputs[#node.inputs].connection)
@@ -297,7 +308,7 @@ local function InspectorFrame(node)
     local io_type = tbl_types[node.type] and "out" or "in"
     local current_io_tbl = tbl_types[node.type] and node.outputs or
         node.inputs --node.type == "m" and node.outputs or node.inputs
-    if node.type == "tc" or node.fname == "CUSTOM_MultiIfElse" or node.fname == "CUSTOM_MultiIfElseifElse" or node.fname == "CUSTOM_CodeNodeRun" then
+    if node.type == "tc" or node.fname == "CUSTOM_MultiIfElse" or node.fname == "CUSTOM_MultiOr" or node.fname == "CUSTOM_MultiIfElseifElse" or node.fname == "CUSTOM_CodeNodeRun" then
         TableSpecial(node)
         DEF_INC = true
         if node.type == "tc" or node.type == "code" then return end

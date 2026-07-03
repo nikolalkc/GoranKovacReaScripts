@@ -52,7 +52,9 @@ local ACTIVE_PROJECT
 function TrackSelectionWatcher()
     local proj = r.EnumProjects(-1)
     if watcher_initialized and proj ~= ACTIVE_PROJECT then
-        -- PROJECT TAB SWITCHED - FLUSH CURRENT GRAPH TO ITS TRACK BEFORE THE OLD TRACK POINTER GOES STALE
+        -- PROJECT TAB SWITCHED - STOP ANY RUNNING/DEFERRED FLOW BEFORE THE GRAPH IT REFERS TO IS GONE
+        StopFlowExecution()
+        -- FLUSH CURRENT GRAPH TO ITS TRACK BEFORE THE OLD TRACK POINTER GOES STALE
         SaveGraphToTrack(ACTIVE_TRACK)
         ACTIVE_TRACK = nil
     end
@@ -61,6 +63,8 @@ function TrackSelectionWatcher()
     local sel = r.GetSelectedTrack(0, 0)
     if watcher_initialized and sel == ACTIVE_TRACK then return end
     watcher_initialized = true
+    -- TRACK SELECTION CHANGED - STOP ANY RUNNING/DEFERRED FLOW BEFORE SWAPPING THE GRAPH OUT
+    StopFlowExecution()
     SaveGraphToTrack(ACTIVE_TRACK)
     ACTIVE_TRACK = sel
     if sel then

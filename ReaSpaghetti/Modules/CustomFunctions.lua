@@ -320,6 +320,23 @@ function CUSTOM_GetOsNativeSeparator(called_node, func_node)
     called_node.outputs[1].o_val = NATIVE_SEPARATOR
 end
 
+function CUSTOM_MultiOr(called_node, func_node)
+    local result = false
+    for i = 1, #called_node.inputs do
+        local inp
+        if called_node.inputs[i].o_val == nil then
+            inp = called_node.inputs[i].i_val
+        else
+            inp = called_node.inputs[i].o_val
+        end
+        if inp then
+            result = true
+            break
+        end
+    end
+    called_node.outputs[1].o_val = result
+end
+
 function CUSTOM_MultiIfElse(called_node, func_node)
     called_node.outputs[1].run = false
     called_node.outputs[2].run = false

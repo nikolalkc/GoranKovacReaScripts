@@ -1250,16 +1250,13 @@ local function Draw_input(node, io_type, pin, x, y, pin_n, h)
                 local btn_h = (node.h - NODE_CFG.SEGMENT - 8) * CANVAS.scale
 
                 -- FIXED ID/LABEL SO IMGUI DOESN'T TREAT A RELABEL AS A NEW WIDGET (WAS CAUSING FLICKER)
-                -- ONE-SHOT USES A SHORT MANUAL FLASH TIMER SO THE COLOR ALWAYS BLIPS BRIEFLY,
-                -- INSTEAD OF STAYING LIT FOR AS LONG AS THE MOUSE IS HELD DOWN (IMGUI'S NATIVE ACTIVE STATE)
-                local is_on = node.trigger_mode == "hold" and pin.i_val
-                    or (node.flash_until and r.time_precise() < node.flash_until)
+                -- DRAW NEUTRAL FIRST, THEN QUERY THIS FRAME'S ACTIVE STATE, THEN OVERLAY THE COLOR/LABEL
+                -- SO HOLD MODE REFLECTS THE CURRENT FRAME INSTEAD OF LAGGING ONE FRAME BEHIND
+                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Button(), 0x1E1E1EFF)
+                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ButtonHovered(), 0x2A2A2AFF)
+                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ButtonActive(), 0x2A2A2AFF)
 
-                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Button(), is_on and 0x15BC99FF or 0x1E1E1EFF)
-                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ButtonHovered(), is_on and 0x1CD6ADFF or 0x2A2A2AFF)
-                r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ButtonActive(), is_on and 0x15BC99FF or 0x2A2A2AFF)
-
-                r.ImGui_Button(ctx, "TRIGGER##" .. pin.label, w, btn_h)
+                r.ImGui_Button(ctx, "##" .. pin.label, w, btn_h)
 
                 r.ImGui_PopStyleColor(ctx, 3)
 
@@ -1269,9 +1266,24 @@ local function Draw_input(node, io_type, pin, x, y, pin_n, h)
                     -- oneshot: pulse true only on the mouse-down (activation) frame
                     local activated = r.ImGui_IsItemActivated(ctx)
                     pin.i_val = activated
+                    -- ONE-SHOT USES A SHORT MANUAL FLASH TIMER SO THE COLOR ALWAYS BLIPS BRIEFLY,
+                    -- INSTEAD OF STAYING LIT FOR AS LONG AS THE MOUSE IS HELD DOWN (IMGUI'S NATIVE ACTIVE STATE)
                     if activated then node.flash_until = r.time_precise() + 0.12 end
                 end
                 pin.o_val = pin.i_val
+
+                local is_on = node.trigger_mode == "hold" and pin.i_val
+                    or (node.flash_until and r.time_precise() < node.flash_until)
+
+                local rx, ry = r.ImGui_GetItemRectMin(ctx)
+                local rxe, rye = r.ImGui_GetItemRectMax(ctx)
+                r.ImGui_DrawList_AddRectFilled(DL, rx, ry, rxe, rye,
+                    is_on and 0x15BC99FF or 0x1E1E1EFF, 5)
+
+                local label = is_on and "TRUE" or "FALSE"
+                local tw, th = r.ImGui_CalcTextSize(ctx, label)
+                r.ImGui_DrawList_AddText(DL, rx + (rxe - rx - tw) / 2, ry + (rye - ry - th) / 2,
+                    0xFFFFFFFF, label)
 
                 -- RIGHT CLICK THE BUTTON ITSELF OPENS THE MODE MENU (SAME HOVER-SCOPED PATTERN AS CONTROLLER SETTINGS)
                 if r.ImGui_IsItemHovered(ctx) and r.ImGui_IsMouseReleased(ctx, 1) and not IS_DRAGGING_RIGHT_CANVAS then
