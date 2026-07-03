@@ -225,6 +225,10 @@ local function loop()
         WND_FLAGS)
     TOOLBAR_DRAG = r.ImGui_IsItemHovered(ctx)
     if visible then
+        -- Check for ESC key to exit
+        if r.ImGui_IsKeyPressed(ctx, 27) then -- 27 is ESC key code
+            CLOSE = true
+        end
         frame()
         r.ImGui_End(ctx)
     end
