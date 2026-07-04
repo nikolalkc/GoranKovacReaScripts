@@ -508,7 +508,20 @@
         <li><a href="#parse_timestr_pos">parse_timestr_pos</a></li>
         <li><a href="#parsepanstr">parsepanstr</a></li>
         <li><a href="#PCM_Sink_Enum">PCM_Sink_Enum</a></li>
+		<li><a href="#LKC_TC_SetupContainer">LKC_TC_SetupContainer</a></li>
+		<li><a href="#LKC_TC_ClearAssets">LKC_TC_ClearAssets</a></li>
+		<li><a href="#LKC_TC_AddAsset">LKC_TC_AddAsset</a></li>
+		<li><a href="#LKC_TC_ClearContainer">LKC_TC_ClearContainer</a></li>
 		<li><a href="#LKC_TC_Trigger">LKC_TC_Trigger</a></li>
+		<li><a href="#LKC_TC_TriggerAll">LKC_TC_TriggerAll</a></li>
+		<li><a href="#LKC_TC_StopAll">LKC_TC_StopAll</a></li>
+		<li><a href="#LKC_TC_HasContainer">LKC_TC_HasContainer</a></li>
+		<li><a href="#LKC_TC_GetActiveVoices">LKC_TC_GetActiveVoices</a></li>
+		<li><a href="#LKC_TC_GetLastAssetIdx">LKC_TC_GetLastAssetIdx</a></li>
+		<li><a href="#LKC_TC_StartBurst">LKC_TC_StartBurst</a></li>
+		<li><a href="#LKC_TC_StopBurst">LKC_TC_StopBurst</a></li>
+		<li><a href="#LKC_TC_SoftStopBurst">LKC_TC_SoftStopBurst</a></li>
+		<li><a href="#LKC_TC_StartBurstAll">LKC_TC_StartBurstAll</a></li>
         <li><a href="#PCM_Sink_GetExtension">PCM_Sink_GetExtension</a></li>
         <li><a href="#PCM_Sink_ShowConfig">PCM_Sink_ShowConfig</a></li>
         <li><a href="#PCM_Source_BuildPeaks">PCM_Source_BuildPeaks</a></li>
@@ -6331,8 +6344,73 @@ See <a href="#MIDIEditor_GetSetting_int">MIDIEditor_GetSetting_int</a><br>
 
 
 
+<div class="function_definition" id="LKC_TC_SetupContainer">
+	<div class="l_func"><code><em>boolean</em> reaper.LKC_TC_SetupContainer(<em>MediaTrack</em> track, <em>string</em> type_str, <em>integer</em> voice_limit, <em>integer</em> no_repeat, <em>integer</em> shuffle, <em>integer</em> loop, <em>number</em> pitch_min, <em>number</em> pitch_max, <em>number</em> vol_min, <em>number</em> vol_max, <em>number</em> trigger_offset)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_ClearAssets">
+	<div class="l_func"><code>reaper.LKC_TC_ClearAssets(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_AddAsset">
+	<div class="l_func"><code><em>boolean</em> reaper.LKC_TC_AddAsset(<em>MediaTrack</em> track, <em>PCM_source</em> source, <em>MediaTrack</em> parent_track, <em>number</em> volume, <em>number</em> pan, <em>number</em> playrate, <em>number</em> section_start, <em>number</em> section_length, <em>number</em> fade_in, <em>number</em> fade_out)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_ClearContainer">
+	<div class="l_func"><code>reaper.LKC_TC_ClearContainer(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
 <div class="function_definition" id="LKC_TC_Trigger">
-	<div class="l_func"><code><em>integer</em> reaper.LKC_TC_Trigger(<em>MediaTrack</em> Track)</code></div>
+	<div class="l_func"><code>reaper.LKC_TC_Trigger(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_TriggerAll">
+	<div class="l_func"><code>reaper.LKC_TC_TriggerAll(<em>MediaTrack</em> t0, <em>MediaTrack</em> t1, <em>MediaTrack</em> t2, <em>MediaTrack</em> t3, <em>MediaTrack</em> t4, <em>MediaTrack</em> t5, <em>MediaTrack</em> t6, <em>MediaTrack</em> t7)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_StopAll">
+	<div class="l_func"><code>reaper.LKC_TC_StopAll(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_HasContainer">
+	<div class="l_func"><code><em>boolean</em> reaper.LKC_TC_HasContainer(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_GetActiveVoices">
+	<div class="l_func"><code><em>integer</em> reaper.LKC_TC_GetActiveVoices(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_GetLastAssetIdx">
+	<div class="l_func"><code><em>integer</em> reaper.LKC_TC_GetLastAssetIdx(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_StartBurst">
+	<div class="l_func"><code>reaper.LKC_TC_StartBurst(<em>MediaTrack</em> track, <em>integer</em> shots, <em>number</em> rate_hz)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_StopBurst">
+	<div class="l_func"><code>reaper.LKC_TC_StopBurst(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_SoftStopBurst">
+	<div class="l_func"><code>reaper.LKC_TC_SoftStopBurst(<em>MediaTrack</em> track)</code></div>
+
+</div>
+
+<div class="function_definition" id="LKC_TC_StartBurstAll">
+	<div class="l_func"><code>reaper.LKC_TC_StartBurstAll(<em>MediaTrack</em> t0, <em>MediaTrack</em> t1, <em>MediaTrack</em> t2, <em>MediaTrack</em> t3, <em>MediaTrack</em> t4, <em>MediaTrack</em> t5, <em>MediaTrack</em> t6, <em>MediaTrack</em> t7, <em>integer</em> shots, <em>number</em> rate_hz, <em>integer</em> mode)</code></div>
 
 </div>
 
