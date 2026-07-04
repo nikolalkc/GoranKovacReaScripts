@@ -647,6 +647,68 @@ function DeferTest()
     end
 end
 
+local function GraphSourceIndicator()
+    local label = GetGraphOwnerLabel()
+    if not label then return end
+    local inherited = IsGraphInherited()
+    local deletable = not inherited and SelectedTrackHasOwnGraphData()
+    local txt = "LOGIC: " .. label
+    local tw = r.ImGui_CalcTextSize(ctx, txt)
+    local btn_w = 0
+    if inherited then
+        btn_w = r.ImGui_CalcTextSize(ctx, "OVERRIDE") + 18
+    elseif deletable then
+        btn_w = r.ImGui_CalcTextSize(ctx, "DELETE") + 18
+    end
+    r.ImGui_SameLine(ctx)
+    if r.ImGui_BeginChild(ctx, "GraphSource", tw + btn_w + 12, 25, 1) then
+        r.ImGui_SetCursorPos(ctx, 4, 5)
+        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_Text(), inherited and 0xF0C674FF or 0x9AC28CFF)
+        r.ImGui_Text(ctx, txt)
+        r.ImGui_PopStyleColor(ctx)
+        if r.ImGui_IsItemHovered(ctx) then
+            r.ImGui_SetTooltip(ctx,
+                inherited and "Logic inherited from parent track (edits are saved to the parent)" or
+                "Selected track owns this logic")
+        end
+        if inherited then
+            r.ImGui_SameLine(ctx)
+            r.ImGui_SetCursorPosY(ctx, 2)
+            if r.ImGui_Button(ctx, "OVERRIDE") then
+                r.ImGui_OpenPopup(ctx, "OverrideGraphMenu")
+            end
+            if r.ImGui_IsItemHovered(ctx) then
+                r.ImGui_SetTooltip(ctx, "Give the selected track its own logic")
+            end
+            if r.ImGui_BeginPopup(ctx, "OverrideGraphMenu") then
+                if r.ImGui_MenuItem(ctx, "Copy parent graph") then
+                    OverrideGraphToSelectedTrack()
+                end
+                if r.ImGui_MenuItem(ctx, "Start blank") then
+                    OverrideGraphToSelectedTrack(true)
+                end
+                r.ImGui_EndPopup(ctx)
+            end
+        elseif deletable then
+            r.ImGui_SameLine(ctx)
+            r.ImGui_SetCursorPosY(ctx, 2)
+            if r.ImGui_Button(ctx, "DELETE") then
+                r.ImGui_OpenPopup(ctx, "DeleteGraphMenu")
+            end
+            if r.ImGui_IsItemHovered(ctx) then
+                r.ImGui_SetTooltip(ctx, "Delete this track's logic and inherit from parent (or start blank)")
+            end
+            if r.ImGui_BeginPopup(ctx, "DeleteGraphMenu") then
+                if r.ImGui_MenuItem(ctx, "Confirm delete - inherit parent") then
+                    DeleteGraphFromSelectedTrack()
+                end
+                r.ImGui_EndPopup(ctx)
+            end
+        end
+        r.ImGui_EndChild(ctx)
+    end
+end
+
 function UI_Buttons()
     r.ImGui_SetCursorPos(ctx, 5, 5)
     -- NIFTY HACK FOR COMMENT BOX NOT OVERLAP UI BUTTONS
@@ -678,6 +740,7 @@ function UI_Buttons()
         ------------------
         r.ImGui_EndChild(ctx)
     end
+    GraphSourceIndicator()
     --FunctionIspector()
     --FunctionIO()
 

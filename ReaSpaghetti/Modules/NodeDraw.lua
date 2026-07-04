@@ -981,9 +981,6 @@ local function Draw_Pin_Button(dl, pin_tbl, name, node_id, pin_id, pin_type, x, 
 end
 
 local function Pin_Drag_Drop(pin, node, p_num, table_type)
-    -- DO NOT ALLOW BRANCHING RUN OUTPUT (NO PARALLEL) - INPUTS CAN BE OVERRIDDEN INSTEAD OF BLOCKED
-    if table_type == "out" and pin.type == "RUN" and next(pin.connection) then return end
-
     if r.ImGui_BeginDragDropSource(ctx) then
         local connection_guid = node.guid .. ":" .. pin.label
         local pin_label = #pin.label ~= 0 and pin.label or "DUMMY"
@@ -1035,14 +1032,30 @@ local function Pin_Drag_Drop(pin, node, p_num, table_type)
             if HasConnection(pin.connection, reverse_link_guid) then return end
             if HasConnection(pin.connection, link_guid) then return end
 
-            -- INPUT ALREADY HAS A CONNECTION (RUN INCLUDED, NO PARALLEL) - REPLACE IT WITH THE NEW ONE
+            -- INPUT ALREADY HAS A CONNECTION - REPLACE IT WITH THE NEW ONE
             if table_type == "in" and next(pin.connection) then
+                AddUndo(node, { op = "DELETE_WIRE", link = pin.connection[1].link })
+                Delete_Wire({ { link = pin.connection[1].link } })
+            end
+
+            -- RUN OUTPUT (THIS SIDE) ALREADY HAS A CONNECTION (NO PARALLEL) - REPLACE IT WITH THE NEW ONE
+            if table_type == "out" and pin.type == "RUN" and next(pin.connection) then
                 AddUndo(node, { op = "DELETE_WIRE", link = pin.connection[1].link })
                 Delete_Wire({ { link = pin.connection[1].link } })
             end
 
             local NODES = GetNodeTBL()
             local source = In_TBL(NODES, node_guid)
+
+            -- RUN OUTPUT (SOURCE SIDE) ALREADY HAS A CONNECTION (NO PARALLEL) - REPLACE IT WITH THE NEW ONE
+            if tbl_type == "out" and pin_type == "RUN" then
+                local source_pin = source.outputs[tonumber(pin_num)]
+                if next(source_pin.connection) then
+                    local existing_link = source_pin.connection[1].link
+                    AddUndo(source, { op = "DELETE_WIRE", link = existing_link })
+                    Delete_Wire({ { link = existing_link } })
+                end
+            end
 
             pin.connection[#pin.connection + 1] = {
                 link = link_guid,

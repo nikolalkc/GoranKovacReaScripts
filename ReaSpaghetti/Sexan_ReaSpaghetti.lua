@@ -258,7 +258,7 @@ local function loop()
     end
 
     if not open then
-        SaveGraphToTrack(ACTIVE_TRACK)
+        SaveGraphToTrack(GRAPH_TRACK)
         CLOSE = true
     end
     NEXT_FRAME = true
