@@ -981,10 +981,8 @@ local function Draw_Pin_Button(dl, pin_tbl, name, node_id, pin_id, pin_type, x, 
 end
 
 local function Pin_Drag_Drop(pin, node, p_num, table_type)
-    -- DO NOT ALLOW BRANCHING RUN OR RUN PINS IF ALREADY CONNECTED
-    if pin.type == "RUN" and next(pin.connection) then return end
-    -- DO NOT ALLOW BRANCHIN INPUTS
-    if table_type == "in" and next(pin.connection) then return end
+    -- DO NOT ALLOW BRANCHING RUN OUTPUT (NO PARALLEL) - INPUTS CAN BE OVERRIDDEN INSTEAD OF BLOCKED
+    if table_type == "out" and pin.type == "RUN" and next(pin.connection) then return end
 
     if r.ImGui_BeginDragDropSource(ctx) then
         local connection_guid = node.guid .. ":" .. pin.label
@@ -1027,12 +1025,8 @@ local function Pin_Drag_Drop(pin, node, p_num, table_type)
                 end
             end
 
-            -- DONT ALLOW BRANCHING RUN PIN (NO PARALLEL)
-            if pin.type == "RUN" and next(pin.connection) then return end
             -- DONT ALLOW CONNECTING INPUT TO INPUT
             if table_type == tbl_type then return end
-            -- DO NOT ALLOW BRANCHIN INPUTS
-            if table_type == "in" and next(pin.connection) then return end
 
             local reverse_link_guid = node.guid .. ":" .. pin.label .. "-" .. con_guid
             local link_guid = con_guid .. "-" .. node.guid .. ":" .. pin.label
@@ -1040,6 +1034,12 @@ local function Pin_Drag_Drop(pin, node, p_num, table_type)
             -- CHECK IF CONNECTION EXIST IN BOTH DIRECTIONS (DO NOT ADD IF ALREADY HAS CONNECTION FROM ONE SIDE)
             if HasConnection(pin.connection, reverse_link_guid) then return end
             if HasConnection(pin.connection, link_guid) then return end
+
+            -- INPUT ALREADY HAS A CONNECTION (RUN INCLUDED, NO PARALLEL) - REPLACE IT WITH THE NEW ONE
+            if table_type == "in" and next(pin.connection) then
+                AddUndo(node, { op = "DELETE_WIRE", link = pin.connection[1].link })
+                Delete_Wire({ { link = pin.connection[1].link } })
+            end
 
             local NODES = GetNodeTBL()
             local source = In_TBL(NODES, node_guid)
