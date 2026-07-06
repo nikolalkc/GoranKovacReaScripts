@@ -90,6 +90,7 @@ function AlignSelectedNodes(mode)
     local NODES = GetCurFunctionNodes()
     local sel = CntSelNodes()
     if #sel < 2 then return end
+    AddUndo("ALIGN")
 
     -- SELECTION BOUNDING BOX
     local minx, miny = math.huge, math.huge
@@ -131,6 +132,7 @@ function StraightenSelectedNodes()
     local NODES = GetCurFunctionNodes()
     local sel = CntSelNodes()
     if #sel < 2 then return end
+    AddUndo("STRAIGHTEN")
 
     local sum_cy = 0
     for i = 1, #sel do sum_cy = sum_cy + (sel[i].y + sel[i].h / 2) end
@@ -150,6 +152,7 @@ end
 -- Pin Ys are screen space, so convert the delta back to canvas space via scale.
 function StraightenWire(keep)
     if not AnySelWire() then return end
+    AddUndo("STRAIGHTEN_WIRE")
     local NODES = GetCurFunctionNodes()
     for _, w in pairs(SEL_WIRES) do
         if w.out_y and w.in_y then
@@ -623,6 +626,7 @@ local function OldMetatable()
 end
 
 function InsertNode(type, name, api_tbl)
+    AddUndo("ADD_NODE")
     local node = AddNode(type, name, api_tbl)
     if type == "api_var" then
         ApiSetterMetaFollower(node)
@@ -1043,7 +1047,7 @@ local function Draw_Beziar(xs, ys, xe, ye, color, th, link, node_o, node_i, pin_
         color = DELETE_COL
         -- DELETE ONLY THIS WIRE
         if r.ImGui_IsMouseClicked(ctx, 0) then
-            AddUndo(node_i, { op = "DELETE_WIRE", link = link })
+            AddUndo("DELETE_WIRE")
             Delete_Wire({ { link = link } })
         end
     end
@@ -1222,15 +1226,16 @@ local function Pin_Drag_Drop(pin, node, p_num, table_type)
             if HasConnection(pin.connection, reverse_link_guid) then return end
             if HasConnection(pin.connection, link_guid) then return end
 
+            -- ALL GUARDS PASSED, THIS DRAG WILL MUTATE THE GRAPH - SNAPSHOT ONCE FOR UNDO
+            AddUndo("CONNECT")
+
             -- INPUT ALREADY HAS A CONNECTION - REPLACE IT WITH THE NEW ONE
             if table_type == "in" and next(pin.connection) then
-                AddUndo(node, { op = "DELETE_WIRE", link = pin.connection[1].link })
                 Delete_Wire({ { link = pin.connection[1].link } })
             end
 
             -- RUN OUTPUT (THIS SIDE) ALREADY HAS A CONNECTION (NO PARALLEL) - REPLACE IT WITH THE NEW ONE
             if table_type == "out" and pin.type == "RUN" and next(pin.connection) then
-                AddUndo(node, { op = "DELETE_WIRE", link = pin.connection[1].link })
                 Delete_Wire({ { link = pin.connection[1].link } })
             end
 
@@ -1242,7 +1247,6 @@ local function Pin_Drag_Drop(pin, node, p_num, table_type)
                 local source_pin = source.outputs[tonumber(pin_num)]
                 if next(source_pin.connection) then
                     local existing_link = source_pin.connection[1].link
-                    AddUndo(source, { op = "DELETE_WIRE", link = existing_link })
                     Delete_Wire({ { link = existing_link } })
                 end
             end
@@ -2025,7 +2029,12 @@ local function Draw_Node(node)
     ClickSelectNode(node)
 
     if not MOVE_NODE then
-        MOVE_NODE = r.ImGui_IsItemActive(ctx) and node.guid or nil
+        -- DRAG START: only snapshot for undo once a real drag begins (not a
+        -- plain click-to-select, which also makes the item active for a frame).
+        if r.ImGui_IsItemActive(ctx) and r.ImGui_IsMouseDragging(ctx, 0) then
+            AddUndo("MOVE_NODE")
+            MOVE_NODE = node.guid
+        end
     end
 
     --DrawTooltip(node.desc)
@@ -2239,6 +2248,7 @@ end
 
 function Paste()
     if not TMP_COPY or #TMP_COPY == 0 then return end
+    AddUndo("PASTE")
     Deselect_all()
 
     for i = 1, #TMP_COPY do
@@ -2286,6 +2296,7 @@ local function DrawDragNode(node)
                 if CUR_TAB == "VARS" then
                     r.ImGui_OpenPopup(ctx, "GET-SET")
                 else
+                    AddUndo("ADD_NODE")
                     NODES[#NODES + 1] = DRAG_LIST_NODE
                     DIRTY = true
 
@@ -2499,8 +2510,18 @@ function DeleteNode(tbl, n)
     table.remove(tbl, n)
 end
 
+local function HasDeletableSelection(tbl)
+    for i = 1, #tbl do
+        if tbl[i].selected and tbl[i].type ~= "m" and tbl[i].type ~= "retnode" then
+            return true
+        end
+    end
+end
+
 function Delete()
     local NODES = GetNodeTBL()
+    -- SNAPSHOT FOR UNDO ONLY IF SOMETHING WILL ACTUALLY BE DELETED
+    if HasDeletableSelection(NODES) then AddUndo("DELETE_NODE") end
     DeleteNodeTable(NODES)
 end
 
