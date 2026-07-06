@@ -257,6 +257,18 @@ local function CheckShortcuts()
             --end
         end
     end
+    -- TAB WITH NO ACTIVE FIELD OPENS THE FILTER LIST, SAME AS RIGHT CLICK.
+    -- MUST RUN BEFORE DrawLoop() SO THE POPUP IS OPEN BEFORE NODE FIELDS DRAW,
+    -- OTHERWISE TAB NAVIGATES INTO A NODE'S TEXT FIELD INSTEAD.
+    if r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_Tab()) and r.ImGui_IsWindowFocused(ctx) and not r.ImGui_IsAnyItemActive(ctx) then
+        INSERT_NODE_DATA, SETTER_INFO = nil, nil
+        MOUSE_POPUP_X, MOUSE_POPUP_Y = nil, nil
+        FILTER = ''
+        FOCUS_FILTER_INPUT = true
+        -- STEAL ImGui'S PENDING TAB-FOCUS SO IT DOESN'T LAND ON A NODE'S TEXT FIELD
+        r.ImGui_SetKeyboardFocusHere(ctx, -1)
+        r.ImGui_OpenPopup(ctx, "FILTER LIST")
+    end
 end
 
 function CanvasLoop()

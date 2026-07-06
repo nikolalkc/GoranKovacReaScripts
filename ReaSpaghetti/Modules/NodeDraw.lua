@@ -561,12 +561,30 @@ end
 
 local MAX_FX_SIZE = 300
 FILTER = ''
+FILTER_SEL = 0
+local prev_filter
 function FilterBox()
     MOUSE_POPUP_X, MOUSE_POPUP_Y = r.ImGui_GetMousePosOnOpeningCurrentPopup(ctx)
     r.ImGui_PushItemWidth(ctx, MAX_FX_SIZE)
-    if r.ImGui_IsWindowAppearing(ctx) then r.ImGui_SetKeyboardFocusHere(ctx) end
+    if r.ImGui_IsWindowAppearing(ctx) or FOCUS_FILTER_INPUT then
+        r.ImGui_SetKeyboardFocusHere(ctx)
+        FOCUS_FILTER_INPUT = nil
+        FILTER_SEL = 0
+        prev_filter = FILTER
+    end
     _, FILTER = r.ImGui_InputText(ctx, '##input', FILTER)
     local filtered_fx = Filter_actions(FILTER, API_LIST)
+    if FILTER ~= prev_filter then
+        FILTER_SEL = #filtered_fx > 0 and 1 or 0
+        prev_filter = FILTER
+    end
+    if #filtered_fx == 0 then
+        FILTER_SEL = 0
+    elseif r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_DownArrow(), true) then
+        FILTER_SEL = FILTER_SEL >= #filtered_fx and 1 or FILTER_SEL + 1
+    elseif r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_UpArrow(), true) then
+        FILTER_SEL = FILTER_SEL <= 1 and #filtered_fx or FILTER_SEL - 1
+    end
     r.ImGui_SetNextWindowPos(ctx, r.ImGui_GetItemRectMin(ctx), ({ r.ImGui_GetItemRectMax(ctx) })[2])
     local filter_h = #filtered_fx == 0 and 2 or (#filtered_fx > 40 and 20 * 17 or (17 * #filtered_fx))
     if not SETTER_INFO and not INSERT_NODE_DATA then
@@ -629,10 +647,18 @@ function FilterBox()
     if r.ImGui_BeginChild(ctx, "##popupp", MAX_FX_SIZE, filter_h) then
         for i = 1, #filtered_fx do
             r.ImGui_PushID(ctx, i)
-            if r.ImGui_Selectable(ctx, filtered_fx[i].label) then
+            if r.ImGui_Selectable(ctx, filtered_fx[i].label, i == FILTER_SEL) then
                 InsertNode("api", filtered_fx[i].label, filtered_fx[i])
                 DIRTY = true
                 r.ImGui_CloseCurrentPopup(ctx)
+            end
+            if i == FILTER_SEL then
+                r.ImGui_SetScrollHereY(ctx, 0.5)
+                if ENTER or KEYPAD_ENTER then
+                    InsertNode("api", filtered_fx[i].label, filtered_fx[i])
+                    DIRTY = true
+                    r.ImGui_CloseCurrentPopup(ctx)
+                end
             end
             r.ImGui_PopID(ctx)
             -- DISABLE DRAG AND DROP FOR NOW
