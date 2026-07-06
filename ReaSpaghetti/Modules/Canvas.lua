@@ -95,7 +95,6 @@ function UpdateZoom()
     CANVAS.scale = new_scale
 end
 
-local GRID_COL = 0x6E6E6E55 -- grid line colour (lighter gray, ~33% alpha)
 local function DrawGrid()
     if not GRID then return end
 
@@ -103,14 +102,22 @@ local function DrawGrid()
     local CANVAS_sz = { r.ImGui_GetContentRegionAvail(ctx) } -- Resize CANVAS to what's available
     local CANVAS_p1 = { CANVAS_p0[1] + CANVAS_sz[1], CANVAS_p0[2] + CANVAS_sz[2] }
     local GRID_STEP = GRID_SIZE * CANVAS.scale
+    local grid_color
+    if BG_COLOR_MODE == "dark" then
+        grid_color = GRID_COLOR_DARK
+    elseif BG_COLOR_MODE == "legacy" then
+        grid_color = GRID_COLOR_LEGACY
+    else
+        grid_color = GRID_COLOR_GRAY
+    end
     local x = math.fmod(CANVAS.off_x, GRID_STEP)
     while x < CANVAS_sz[1] do
-        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1] + x, CANVAS_p0[2], CANVAS_p0[1] + x, CANVAS_p1[2], GRID_COL)
+        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1] + x, CANVAS_p0[2], CANVAS_p0[1] + x, CANVAS_p1[2], grid_color)
         x = x + GRID_STEP
     end
     local y = math.fmod(CANVAS.off_y, GRID_STEP)
     while y < CANVAS_sz[2] do
-        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1], CANVAS_p0[2] + y, CANVAS_p1[1], CANVAS_p0[2] + y, GRID_COL)
+        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1], CANVAS_p0[2] + y, CANVAS_p1[1], CANVAS_p0[2] + y, grid_color)
         y = y + GRID_STEP
     end
 end

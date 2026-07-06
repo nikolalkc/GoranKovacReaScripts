@@ -95,6 +95,17 @@ local function frame()
     end
     r.ImGui_SameLine(ctx)
     r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_WindowPadding(), 0, 0)
+
+    local BG_COLOR
+    if BG_COLOR_MODE == "dark" then
+        BG_COLOR = BG_COLOR_DARK
+    elseif BG_COLOR_MODE == "legacy" then
+        BG_COLOR = BG_COLOR_LEGACY
+    else
+        BG_COLOR = BG_COLOR_GRAY
+    end
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), BG_COLOR)
+
     local visible = r.ImGui_BeginChild(ctx, "Canvas", 0, 0, 1,
         r.ImGui_WindowFlags_NoScrollbar() | r.ImGui_WindowFlags_NoScrollWithMouse())
     r.ImGui_PopStyleVar(ctx)
@@ -115,6 +126,7 @@ local function frame()
         end
         r.ImGui_EndChild(ctx) -- END CANVAS1
     end
+    r.ImGui_PopStyleColor(ctx)
 end
 
 DIRTY = nil
@@ -181,11 +193,8 @@ local function loop()
     -- r.ImGui_PushStyleColor(ctx, r.ImGui_Col_TextSelectedBg(),       0x42FA8459)
     -- r.ImGui_PushStyleColor(ctx, r.ImGui_Col_NavCursor(),            0x42FA6EFF)
 
-
-    local BG_COLOR = BG_ATTACHED and BG_COLOR_ATTACHED or BG_COLOR_CURRENT
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), BG_COLOR) -- LKC -- toggleable BG
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_WindowBg(), BG_COLOR) -- LKC -- toggleable BG
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), BG_COLOR) -- LKC -- toggleable BG
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_WindowBg(), 0x333333ff)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x333333ff)
     r.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TitleBgActive(), 0x2D4F47FF)
     reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGripHovered(), 0x42FAD1AB)
     reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGripActive(), 0x42FAD1F2)
@@ -251,7 +260,7 @@ local function loop()
         r.ImGui_End(ctx)
     end
     r.ImGui_PopStyleVar(ctx, 6)
-    reaper.ImGui_PopStyleColor(ctx, 31)
+    reaper.ImGui_PopStyleColor(ctx, 30)
 
     if not CLOSE then
         r.defer(function() xpcall(loop, crash) end)

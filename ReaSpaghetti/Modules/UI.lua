@@ -91,6 +91,18 @@ function Top_Menu()
             end
             r.ImGui_EndMenu(ctx)
         end
+        if r.ImGui_BeginMenu(ctx, 'View') then
+            if r.ImGui_MenuItem(ctx, 'Gray Background', '', BG_COLOR_MODE == "gray") then
+                BG_COLOR_MODE = "gray"
+            end
+            if r.ImGui_MenuItem(ctx, 'Dark Background', '', BG_COLOR_MODE == "dark") then
+                BG_COLOR_MODE = "dark"
+            end
+            if r.ImGui_MenuItem(ctx, 'Legacy Background', '', BG_COLOR_MODE == "legacy") then
+                BG_COLOR_MODE = "legacy"
+            end
+            r.ImGui_EndMenu(ctx)
+        end
         if r.ImGui_BeginMenu(ctx, 'Options') then
             if r.ImGui_MenuItem(ctx, 'Preferences') then
                 PREFERENCES = true
@@ -729,46 +741,44 @@ function UI_Buttons()
     r.ImGui_SetCursorPos(ctx, 5, 5)
     -- NIFTY HACK FOR COMMENT BOX NOT OVERLAP UI BUTTONS
     r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x00000000) -- transparent overlay
-    if not r.ImGui_BeginChild(ctx, 'toolbars', -FLT_MIN, -FLT_MIN, false, r.ImGui_WindowFlags_NoInputs()) then
+    if r.ImGui_BeginChild(ctx, 'toolbars', -FLT_MIN, -FLT_MIN, false, r.ImGui_WindowFlags_NoInputs()) then
         r.ImGui_PopStyleColor(ctx)
-        return
-    end
-    r.ImGui_PopStyleColor(ctx)
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x1A1A1AEE) -- REAPER 7: dark panel bg
+        r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), 0x1A1A1AEE) -- REAPER 7: dark panel bg
 
-    r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_WindowPadding(), 0, 0)
-    if r.ImGui_BeginChild(ctx, "TopButtons", 490, 25, 1) then
-        r.ImGui_SetCursorPos(ctx, 4, 3)
-        if r.ImGui_Checkbox(ctx, "GRID", GRID) then GRID = not GRID end
-        r.ImGui_SameLine(ctx)
-        if r.ImGui_Checkbox(ctx, "BG", BG_ATTACHED) then BG_ATTACHED = not BG_ATTACHED end
-        r.ImGui_SameLine(ctx)
-        if r.ImGui_Button(ctx, "CENTER VIEW") then
-            FLUX.to(CANVAS, 0.5, { off_x = CANVAS.rx / 2 - 100 * CANVAS.scale, off_y = CANVAS.ry / 2 }):ease("cubicout")
+        r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_WindowPadding(), 0, 0)
+        if r.ImGui_BeginChild(ctx, "TopButtons", 490, 25, 1) then
+            r.ImGui_SetCursorPos(ctx, 4, 3)
+            if r.ImGui_Checkbox(ctx, "GRID", GRID) then GRID = not GRID end
+            r.ImGui_SameLine(ctx)
+            if r.ImGui_Button(ctx, "CENTER VIEW") then
+                FLUX.to(CANVAS, 0.5, { off_x = CANVAS.rx / 2 - 100 * CANVAS.scale, off_y = CANVAS.ry / 2 }):ease("cubicout")
+            end
+            r.ImGui_SameLine(ctx)
+            r.ImGui_Text(ctx, "ZOOM : " .. string.format("%.3f", CANVAS.scale))
+
+            r.ImGui_SameLine(ctx)
+            ------------------
+            DeferTest()
+            r.ImGui_SameLine(ctx)
+            ------------------
+            r.ImGui_EndChild(ctx)
         end
-        r.ImGui_SameLine(ctx)
-        r.ImGui_Text(ctx, "ZOOM : " .. string.format("%.3f", CANVAS.scale))
+        GraphSourceIndicator()
+        --FunctionIspector()
+        --FunctionIO()
 
-        r.ImGui_SameLine(ctx)
-        ------------------
-        DeferTest()
-        r.ImGui_SameLine(ctx)
-        ------------------
+        DBGMsg()
+        DBGNode()
+
+        --Inspector()
+        NodeInspector()
+        FunctionIspector()
+        r.ImGui_PopStyleVar(ctx)
+        r.ImGui_PopStyleColor(ctx)
         r.ImGui_EndChild(ctx)
+    else
+        r.ImGui_PopStyleColor(ctx)
     end
-    GraphSourceIndicator()
-    --FunctionIspector()
-    --FunctionIO()
-
-    DBGMsg()
-    DBGNode()
-
-    --Inspector()
-    NodeInspector()
-    FunctionIspector()
-    r.ImGui_PopStyleVar(ctx)
-    r.ImGui_PopStyleColor(ctx)
-    r.ImGui_EndChild(ctx)
 end
 
 FUNCTION_NAME = "Main"

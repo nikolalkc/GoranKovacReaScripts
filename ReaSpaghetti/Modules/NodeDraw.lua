@@ -33,8 +33,18 @@ local NODE_CFG = {
     PIN_BTN_W_EXTEND = 1.5, -- CANNOT BE 0 (EXTEND PIN HITBOX)
     LABEL_COL = 0xF0F0F0FF, -- REAPER 7: near-white label text
     PIN_LABEL_COL = 0xD0D0D0FF, -- REAPER 7: light gray pin labels
+    LABEL_COL_LEGACY = NODE_TEXT_COLOR_LEGACY, -- black label text
+    PIN_LABEL_COL_LEGACY = NODE_TEXT_COLOR_LEGACY, -- black pin labels
     INPUT_OFFSET = 70
 }
+
+local function GetLabelColor()
+    return BG_COLOR_MODE == "legacy" and NODE_CFG.LABEL_COL_LEGACY or NODE_CFG.LABEL_COL
+end
+
+local function GetPinLabelColor()
+    return BG_COLOR_MODE == "legacy" and NODE_CFG.PIN_LABEL_COL_LEGACY or NODE_CFG.PIN_LABEL_COL
+end
 
 WIRE_COL = 0x15BC99FF  -- REAPER green wire
 DELETE_COL = 0xC0392BFF -- REAPER 7: muted red delete
@@ -271,7 +281,7 @@ function GetVariableTBL(NODES)
     return var_tbl
 end
 
-local NodeCOLOR = {
+local NodeCOLOR_DARK = {
     ["func"]    = 0x15BC99FF, -- REAPER green (function nodes)
     ["retnode"] = 0x15BC99FF, -- REAPER green
     ["n"]       = 0x339887FF, -- deep teal (numeric)
@@ -299,6 +309,18 @@ local NodeCOLOR = {
     ["groupbg"] = 0x15BC9914, -- REAPER green very subtle fill
     ["code"]    = 0x15BC99FF, -- REAPER green
 }
+
+-- LEGACY (CLASSIC LIGHT) THEME: uniform tan/khaki headers, cream node bodies
+local NodeCOLOR_LEGACY = setmetatable({
+    ["bg"]      = NODE_BG_COLOR_LEGACY,   -- cream/beige node body
+    ["groupbg"] = 0x8A6D3B14,             -- subtle khaki group fill
+    ["sel"]     = 0xE8A838FF,             -- amber/orange selection highlight
+    ["warning"] = 0xC0392BFF,             -- muted red warning
+}, { __index = function() return NODE_HEADER_COLOR_LEGACY end })
+
+local function GetNodeCOLOR()
+    return BG_COLOR_MODE == "legacy" and NodeCOLOR_LEGACY or NodeCOLOR_DARK
+end
 
 local PinCOLOR = {
     ["ANY"]            = 0xC8C8C8FF, -- light gray
@@ -1134,7 +1156,7 @@ local function DrawPinLabel(node, pin_type, pin_tbl, name, s, x, y)
     r.ImGui_DrawList_AddTextEx(DL, nil, FONT_SIZE,
         txt_side_off,
         y - FONT_SIZE / 2,
-        NODE_CFG.PIN_LABEL_COL,
+        GetPinLabelColor(),
         name)
 end
 
@@ -1616,7 +1638,7 @@ end
 local function Node_Label(dl, node, x, y, w, h)
     local label_size = r.ImGui_CalcTextSize(ctx, node.label)
     local FONT_SIZE = r.ImGui_GetFontSize(ctx)
-    local col = NODE_CFG.LABEL_COL
+    local col = GetLabelColor()
     r.ImGui_DrawList_AddTextEx(dl, nil, FONT_SIZE, x + (w / 2) - label_size / 2, y + (h / 2) - FONT_SIZE / 2, col,
         node.label)
 end
@@ -1964,19 +1986,20 @@ local function Draw_Node(node)
     local active_ch = sel and NodeDLChannel[node.type] + 1 or NodeDLChannel[node.type]
     ---- DRAW NODE
     r.ImGui_DrawListSplitter_SetCurrentChannel(SPLITTER, active_ch)
+    local node_color = GetNodeCOLOR()
     -- BG
     r.ImGui_DrawList_AddRectFilled(DL, x, y, xe, ye,
-        node.missing_arg and NodeCOLOR["warning"] or (node.type == "group" and NodeCOLOR["groupbg"] or NodeCOLOR["bg"]),
+        node.missing_arg and node_color["warning"] or (node.type == "group" and node_color["groupbg"] or node_color["bg"]),
         NODE_CFG.ROUND_CORNER * CANVAS.scale)
 
     -- TITLE BG
     r.ImGui_DrawList_AddRectFilled(DL, x, y, xe, y + title_h - 2 * CANVAS.scale,
-        node.rgba ~= 0x00000000 and node.rgba or NodeCOLOR[node.type],
+        node.rgba ~= 0x00000000 and node.rgba or node_color[node.type],
         NODE_CFG.ROUND_CORNER * CANVAS.scale, has_body and r.ImGui_DrawFlags_RoundCornersTop() or 0)
 
     if sel then
         --local expand = 1 * CANVAS.scale
-        r.ImGui_DrawList_AddRect(DL, x, y, xe, ye, NodeCOLOR["sel"],
+        r.ImGui_DrawList_AddRect(DL, x, y, xe, ye, node_color["sel"],
             NODE_CFG.ROUND_CORNER * CANVAS.scale, nil,
             edge_thickness * 1.5)
     end
@@ -1994,7 +2017,7 @@ local function Draw_Node(node)
         if i == 1 then
             if (RENAME_NODE and RENAME_NODE.guid ~= node.guid) or not RENAME_NODE then
                 if node.type ~= "route" then
-                    Draw_Toolbar_Button(button, node, i, distance, y, title_h, NodeCOLOR["bg"])
+                    Draw_Toolbar_Button(button, node, i, distance, y, title_h, node_color["bg"])
                     if r.ImGui_IsItemHovered(ctx) then DrawTooltip(node.desc) end
                 end
             end
