@@ -2552,10 +2552,6 @@ function DrawLoop()
     r.ImGui_PushFont(ctx, FONT)
     Node_Drawing()
     r.ImGui_PopFont(ctx)
-    --if START_FLOW and DEFER then
-    if DEFERED_NODE then
-        InitRunFlow()
-    end
 end
 
 function CenterNodeToScreen(node)
