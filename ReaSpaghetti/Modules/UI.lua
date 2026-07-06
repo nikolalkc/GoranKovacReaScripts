@@ -37,6 +37,12 @@ local help_tbl = {
     "\tShift hover    - Trace all Input/Output lines",
     "\tALT CLICK PIN  - Deletes all connections to that pin",
     "\tALT CLICK WIRE - Deletes that specific wire",
+    "CABLES :",
+    "\tClick Cable    - Select cable",
+    "\tShift + Click  - Add cable to selection",
+    "\tMarquee Drag   - Select all crossed cables",
+    "\tShift + A      - Straighten: keep left node, move right node",
+    "\tShift + D      - Straighten: keep right node, move left node",
 }
 
 function Top_Menu()

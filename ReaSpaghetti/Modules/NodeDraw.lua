@@ -38,6 +38,22 @@ local NODE_CFG = {
 
 WIRE_COL = 0x15BC99FF  -- REAPER green wire
 DELETE_COL = 0xC0392BFF -- REAPER 7: muted red delete
+SEL_WIRE_COL = 0xF0A030FF -- selected wire highlight (amber)
+
+-- SELECTED WIRES: keyed by link guid -> { o_guid, i_guid, out_y, in_y }.
+-- out_y/in_y are the pin screen-Y positions, refreshed each frame while drawn.
+SEL_WIRES = {}
+
+function ClearSelWires() SEL_WIRES = {} end
+
+function AnySelWire()
+    return next(SEL_WIRES) ~= nil
+end
+
+function SelectWire(link, o_guid, i_guid, add)
+    if not add then ClearSelWires() end
+    SEL_WIRES[link] = { o_guid = o_guid, i_guid = i_guid }
+end
 
 function CntSelNodes()
     local cnt_tbl = {}
@@ -123,6 +139,32 @@ function StraightenSelectedNodes()
     for i = 1, #sel do
         local n = sel[i]
         OffsetNode(n, 0, target_cy - (n.y + n.h / 2), NODES)
+    end
+    DIRTY = true
+end
+
+-- STRAIGHTEN EACH SELECTED WIRE BY MOVING ONE OF ITS NODES VERTICALLY SO THE
+-- OUTPUT AND INPUT PINS LINE UP.
+--   "keep_left"  -> keep source (output) node, move destination (input) node
+--   "keep_right" -> keep destination (input) node, move source (output) node
+-- Pin Ys are screen space, so convert the delta back to canvas space via scale.
+function StraightenWire(keep)
+    if not AnySelWire() then return end
+    local NODES = GetCurFunctionNodes()
+    for _, w in pairs(SEL_WIRES) do
+        if w.out_y and w.in_y then
+            local o_node = In_TBL(NODES, w.o_guid)
+            local i_node = In_TBL(NODES, w.i_guid)
+            if o_node and i_node then
+                if keep == "keep_left" then
+                    -- MOVE RIGHT (INPUT) NODE SO ITS PIN MATCHES THE OUTPUT PIN
+                    OffsetNode(i_node, 0, (w.out_y - w.in_y) / CANVAS.scale, NODES)
+                elseif keep == "keep_right" then
+                    -- MOVE LEFT (OUTPUT) NODE SO ITS PIN MATCHES THE INPUT PIN
+                    OffsetNode(o_node, 0, (w.in_y - w.out_y) / CANVAS.scale, NODES)
+                end
+            end
+        end
     end
     DIRTY = true
 end
@@ -958,6 +1000,25 @@ end
 --     end
 -- end
 
+-- DOES THE MARQUEE RECT (SCREEN SPACE) INTERSECT THE WIRE'S BEZIER?
+-- Sampled along the curve; good enough for selection.
+local function MarqueeHitsBez(xs, ys, p2_x, p3_x, ye, xe)
+    if not MARQUEE then return false end
+    local mx1 = (CANVAS.view_x + CANVAS.off_x) + MARQUEE.x * CANVAS.scale
+    local my1 = (CANVAS.view_y + CANVAS.off_y) + MARQUEE.y * CANVAS.scale
+    local mx2 = mx1 + MARQUEE.w * CANVAS.scale
+    local my2 = my1 + MARQUEE.h * CANVAS.scale
+    for i = 0, 16 do
+        local t = i / 16
+        local px = CubicBezier(xs, p2_x, p3_x, xe, t)
+        local py = CubicBezier(ys, ys, ye, ye, t)
+        if px >= mx1 and px <= mx2 and py >= my1 and py <= my2 then
+            return true
+        end
+    end
+    return false
+end
+
 local function Draw_Beziar(xs, ys, xe, ye, color, th, link, node_o, node_i, pin_label, pins_i, pins_o)
     xs = xs + (NODE_CFG.PIN_MOVE_OUT * CANVAS.scale)
     xe = xe - (NODE_CFG.PIN_MOVE_OUT * CANVAS.scale)
@@ -985,6 +1046,32 @@ local function Draw_Beziar(xs, ys, xe, ye, color, th, link, node_o, node_i, pin_
             AddUndo(node_i, { op = "DELETE_WIRE", link = link })
             Delete_Wire({ { link = link } })
         end
+    end
+
+    -- SELECT WIRE ON CLICK (NO ALT). SHIFT ADDS TO THE SELECTION.
+    if not ALT_DOWN and mouse_on_baz then
+        HOVER_WIRE = true -- TELLS THE EMPTY-CANVAS DESELECT TO LEAVE THE WIRE ALONE
+        if r.ImGui_IsMouseClicked(ctx, 0) then
+            if not SHIFT_DOWN then Deselect_all() end
+            SelectWire(link, node_o.guid, node_i.guid, SHIFT_DOWN)
+        end
+    end
+
+    -- MARQUEE MULTI-SELECT: ANY WIRE THE MARQUEE CROSSES GETS ADDED.
+    if MARQUEE and not MOVE_NODE and MarqueeHitsBez(xs, ys, p2_x, p3_x, ye, xe) then
+        SEL_WIRES[link] = { o_guid = node_o.guid, i_guid = node_i.guid }
+    end
+
+    -- HIGHLIGHT SELECTED WIRES, AND CACHE EACH ONE'S PIN SCREEN-Y SO SHORTCUTS
+    -- CAN STRAIGHTEN IT USING THE EXACT PIN POSITIONS (ys = output, ye = input).
+    local sel = SEL_WIRES[link]
+    if sel then
+        color = SEL_WIRE_COL
+        th = 6 * CANVAS.scale
+        sel.out_y = ys
+        sel.in_y = ye
+        sel.o_guid = node_o.guid
+        sel.i_guid = node_i.guid
     end
 
     r.ImGui_DrawList_AddBezierCubic(DL, xs, ys, p2_x, ys, p3_x, ye, xe, ye, color, th)
@@ -1556,6 +1643,7 @@ local FIRST_SELECT
 local function ClickSelectNode(node)
     if r.ImGui_IsMouseDown(ctx, 0) then
         if r.ImGui_IsItemClicked(ctx, 0) then
+            ClearSelWires() -- SELECTING A NODE CLEARS ANY SELECTED WIRES
             -- STORE FIRST CLICKED NODE
             if not FIRST_SELECT then FIRST_SELECT = node end
             if not node.selected then
@@ -2194,6 +2282,11 @@ local function Node_Drawing()
         Draw_Node(node)
         GetGroupChildNodes(node, NODES)
     end
+    HOVER_WIRE = nil -- RECOMPUTED BY Draw_Beziar EACH FRAME
+    -- A NON-SHIFT MARQUEE REBUILDS WIRE SELECTION LIVE (LIKE NODES DO), SO
+    -- CLEAR IT EACH FRAME AND LET THE PER-WIRE OVERLAP TEST REPOPULATE IT.
+    -- SHIFT-MARQUEE KEEPS THE EXISTING SELECTION AND ONLY ADDS.
+    if MARQUEE and not MOVE_NODE and not MARQUEE_SHIFT then ClearSelWires() end
     for i = 1, #NODES do
         Draw_Wire(NODES[i], NODES[i].outputs)
     end

@@ -166,8 +166,9 @@ local function CanvasMouseOperations()
     if r.ImGui_IsWindowHovered(ctx, r.ImGui_HoveredFlags_AllowWhenBlockedByPopup()) then
         if not OPEN_FM then
             if r.ImGui_IsMouseReleased(ctx, 0) and (DRAGX == 0 and DRAGY == 0) and not r.ImGui_IsAnyItemHovered(ctx) then
-                if not SHIFT_DOWN and not CTRL_DOWN then
+                if not SHIFT_DOWN and not CTRL_DOWN and not HOVER_WIRE then
                     Deselect_all()
+                    ClearSelWires()
                 end
             end
             if not IS_DRAGGING_RIGHT_CANVAS and r.ImGui_IsMouseReleased(ctx, 1) and not r.ImGui_IsAnyItemHovered(ctx) then
@@ -223,7 +224,10 @@ local function CheckShortcuts()
     KEYPAD_ENTER = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_KeypadEnter())
 
     -- CLEAR WARNING
-    if ESC then ClearNodesWarning() end
+    if ESC then
+        ClearNodesWarning()
+        ClearSelWires()
+    end
 
     if CTRL_DOWN and KEY_R then
         r.ImGui_SetKeyboardFocusHere(ctx)
@@ -267,9 +271,17 @@ local function CheckShortcuts()
     --   SHIFT+A/D/W/S       -> align left/right/top/bottom edges
     --   ALT+SHIFT+S / +W    -> center horizontally / vertically
     --   Q                   -> straighten (line up vertical centers)
+    -- WHEN ONLY WIRES ARE SELECTED (NO NODES), SHIFT+A/D STRAIGHTEN THEM:
+    --   SHIFT+A -> keep left node, move right node so the cable is straight
+    --   SHIFT+D -> keep right node, move left node so the cable is straight
+    -- IF ANY NODES ARE ALSO SELECTED, CABLES ARE IGNORED AND NODE ALIGN WINS.
     if r.ImGui_IsWindowFocused(ctx) and not r.ImGui_IsAnyItemActive(ctx) then
+        local wires_only = AnySelWire() and #CntSelNodes() == 0
         if SHIFT_DOWN and not CTRL_DOWN then
-            if ALT_DOWN then
+            if wires_only and not ALT_DOWN then
+                if KEY_A then StraightenWire("keep_left") end
+                if KEY_D then StraightenWire("keep_right") end
+            elseif ALT_DOWN then
                 if KEY_S then AlignSelectedNodes("centerx") end
                 if KEY_W then AlignSelectedNodes("centery") end
             else
