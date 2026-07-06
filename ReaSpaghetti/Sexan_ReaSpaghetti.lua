@@ -1,5 +1,5 @@
 -- @description ReaSpaghetti Visual Scripter
--- @author Sexan
+-- @author Sexan, LKC
 -- @license GPL v3
 -- @version 0.49.3
 -- @changelog
@@ -26,7 +26,7 @@ end
 dofile(r.GetResourcePath() .. '/Scripts/ReaTeam Extensions/API/imgui.lua')('0.8.7')
 
 -- IMGUI SETUP
-ctx = r.ImGui_CreateContext('My script')
+ctx = r.ImGui_CreateContext('ReaSpaghetti')
 
 require("Modules/Defaults")
 
