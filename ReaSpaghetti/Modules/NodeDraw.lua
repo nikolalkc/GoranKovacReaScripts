@@ -1667,6 +1667,36 @@ local function ClickSelectNode(node)
     end
 end
 
+-- SNAP A VALUE TO THE NEAREST GRID CELL (CANVAS UNITS).
+local function SnapToGrid(v)
+    return math.floor(v / GRID_SIZE + 0.5) * GRID_SIZE
+end
+
+-- SNAP EVERY SELECTED NODE TO THE GRID (UE5-STYLE, ON DRAG RELEASE).
+-- Non-selected group children move by the same delta so groups stay locked.
+function SnapSelectionToGrid()
+    if not GRID then return end
+    local NODES = GetCurFunctionNodes()
+    for i = 1, #NODES do
+        local node = NODES[i]
+        if node.selected then
+            local sx, sy = SnapToGrid(node.x), SnapToGrid(node.y)
+            local dx, dy = sx - node.x, sy - node.y
+            node.x, node.y = sx, sy
+            if node.childs and #node.childs ~= 0 then
+                for c = 1, #node.childs do
+                    local child = In_TBL(NODES, node.childs[c])
+                    if child and not child.selected then
+                        child.x = child.x + dx
+                        child.y = child.y + dy
+                    end
+                end
+            end
+        end
+    end
+    DIRTY = true
+end
+
 local function MoveNode(node)
     --if DRAG_COPY then return end
     if not MOVE_NODE then return end
@@ -1683,6 +1713,10 @@ local function MoveNode(node)
             node.y = node.y + DY / CANVAS.scale - off_y
         end
     elseif r.ImGui_IsMouseReleased(ctx, 0) then
+        -- DRAG ENDED: SNAP THE WHOLE SELECTION TO GRID (UE5-STYLE). This branch
+        -- fires once (on the first selected node reached this frame) because it
+        -- immediately clears MOVE_NODE, so later MoveNode calls return early.
+        SnapSelectionToGrid()
         MOVE_NODE = nil
     end
 end

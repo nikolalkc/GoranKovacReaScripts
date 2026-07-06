@@ -95,21 +95,22 @@ function UpdateZoom()
     CANVAS.scale = new_scale
 end
 
+local GRID_COL = 0x6E6E6E55 -- grid line colour (lighter gray, ~33% alpha)
 local function DrawGrid()
     if not GRID then return end
 
     local CANVAS_p0 = { r.ImGui_GetCursorScreenPos(ctx) }
     local CANVAS_sz = { r.ImGui_GetContentRegionAvail(ctx) } -- Resize CANVAS to what's available
     local CANVAS_p1 = { CANVAS_p0[1] + CANVAS_sz[1], CANVAS_p0[2] + CANVAS_sz[2] }
-    local GRID_STEP = 64.0 * CANVAS.scale
+    local GRID_STEP = GRID_SIZE * CANVAS.scale
     local x = math.fmod(CANVAS.off_x, GRID_STEP)
     while x < CANVAS_sz[1] do
-        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1] + x, CANVAS_p0[2], CANVAS_p0[1] + x, CANVAS_p1[2], 0x4A4A4A18) -- REAPER 7: subtle grid
+        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1] + x, CANVAS_p0[2], CANVAS_p0[1] + x, CANVAS_p1[2], GRID_COL)
         x = x + GRID_STEP
     end
     local y = math.fmod(CANVAS.off_y, GRID_STEP)
     while y < CANVAS_sz[2] do
-        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1], CANVAS_p0[2] + y, CANVAS_p1[1], CANVAS_p0[2] + y, 0x4A4A4A18) -- REAPER 7: subtle grid
+        r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1], CANVAS_p0[2] + y, CANVAS_p1[1], CANVAS_p0[2] + y, GRID_COL)
         y = y + GRID_STEP
     end
 end

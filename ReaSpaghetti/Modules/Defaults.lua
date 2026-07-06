@@ -9,6 +9,7 @@ EDGE_SCROLLING_SPEED = 5
 
 -- ENABLE GRID
 GRID = true
+GRID_SIZE = 32 -- grid cell size in canvas units (drives grid drawing AND node snapping)
 
 -- BACKGROUND COLOR TOGGLE
 -- false = current gray bg, true = attached (sampled) bg
