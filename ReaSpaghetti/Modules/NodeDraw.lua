@@ -50,6 +50,83 @@ function CntSelNodes()
     return cnt_tbl
 end
 
+-- MOVE A NODE BY (dx, dy). IF IT IS A GROUP, MOVE ITS (NON-SELECTED) CHILDREN TOO,
+-- MIRRORING THE DRAG BEHAVIOUR IN MoveNodeChildren SO GROUPS STAY INTACT.
+local function OffsetNode(node, dx, dy, NODES)
+    node.x = node.x + dx
+    node.y = node.y + dy
+    if node.childs and #node.childs ~= 0 then
+        for i = 1, #node.childs do
+            local child = In_TBL(NODES, node.childs[i])
+            if child and not child.selected then
+                child.x = child.x + dx
+                child.y = child.y + dy
+            end
+        end
+    end
+end
+
+-- ALIGN THE SELECTED NODES.
+-- mode: "left" | "right" | "top" | "bottom" | "centerx" | "centery"
+-- Aligns to the bounding extent of the current selection (leftmost/rightmost edge,
+-- topmost/bottommost edge, or the selection's center line).
+function AlignSelectedNodes(mode)
+    local NODES = GetCurFunctionNodes()
+    local sel = CntSelNodes()
+    if #sel < 2 then return end
+
+    -- SELECTION BOUNDING BOX
+    local minx, miny = math.huge, math.huge
+    local maxx, maxy = -math.huge, -math.huge
+    for i = 1, #sel do
+        local n = sel[i]
+        if n.x < minx then minx = n.x end
+        if n.y < miny then miny = n.y end
+        if n.x + n.w > maxx then maxx = n.x + n.w end
+        if n.y + n.h > maxy then maxy = n.y + n.h end
+    end
+    local cx = (minx + maxx) / 2
+    local cy = (miny + maxy) / 2
+
+    for i = 1, #sel do
+        local n = sel[i]
+        local dx, dy = 0, 0
+        if mode == "left" then
+            dx = minx - n.x
+        elseif mode == "right" then
+            dx = maxx - (n.x + n.w)
+        elseif mode == "top" then
+            dy = miny - n.y
+        elseif mode == "bottom" then
+            dy = maxy - (n.y + n.h)
+        elseif mode == "centerx" then
+            dx = cx - (n.x + n.w / 2)
+        elseif mode == "centery" then
+            dy = cy - (n.y + n.h / 2)
+        end
+        OffsetNode(n, dx, dy, NODES)
+    end
+    DIRTY = true
+end
+
+-- STRAIGHTEN CONNECTIONS: line up the vertical centers of the selected nodes so
+-- horizontal wire chains run straight. Uses the selection's average center Y.
+function StraightenSelectedNodes()
+    local NODES = GetCurFunctionNodes()
+    local sel = CntSelNodes()
+    if #sel < 2 then return end
+
+    local sum_cy = 0
+    for i = 1, #sel do sum_cy = sum_cy + (sel[i].y + sel[i].h / 2) end
+    local target_cy = sum_cy / #sel
+
+    for i = 1, #sel do
+        local n = sel[i]
+        OffsetNode(n, 0, target_cy - (n.y + n.h / 2), NODES)
+    end
+    DIRTY = true
+end
+
 function GetFUNCTIONS()
     return FUNCTIONS
 end

@@ -209,6 +209,11 @@ local function CheckShortcuts()
     local HOME = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_Home())
     local KEY_R = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_R())
     local KEY_Z = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_Z())
+    local KEY_W = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_W())
+    local KEY_A = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_A())
+    local KEY_S = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_S())
+    local KEY_D = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_D())
+    local KEY_Q = r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_Q())
 
     ALT_DOWN = r.ImGui_IsKeyDown(ctx, r.ImGui_Key_LeftAlt())
     SHIFT_DOWN = r.ImGui_IsKeyDown(ctx, r.ImGui_Key_LeftShift())
@@ -255,6 +260,27 @@ local function CheckShortcuts()
             --if not r.ImGui_IsPopupOpen(ctx, "Rename") then
             --    r.ImGui_OpenPopup(ctx, "Rename")
             --end
+        end
+    end
+
+    -- NODE ALIGNMENT SHORTCUTS (UE-STYLE):
+    --   SHIFT+A/D/W/S       -> align left/right/top/bottom edges
+    --   ALT+SHIFT+S / +W    -> center horizontally / vertically
+    --   Q                   -> straighten (line up vertical centers)
+    if r.ImGui_IsWindowFocused(ctx) and not r.ImGui_IsAnyItemActive(ctx) then
+        if SHIFT_DOWN and not CTRL_DOWN then
+            if ALT_DOWN then
+                if KEY_S then AlignSelectedNodes("centerx") end
+                if KEY_W then AlignSelectedNodes("centery") end
+            else
+                if KEY_A then AlignSelectedNodes("left") end
+                if KEY_D then AlignSelectedNodes("right") end
+                if KEY_W then AlignSelectedNodes("top") end
+                if KEY_S then AlignSelectedNodes("bottom") end
+            end
+        end
+        if KEY_Q and not CTRL_DOWN and not SHIFT_DOWN and not ALT_DOWN then
+            StraightenSelectedNodes()
         end
     end
     -- TAB WITH NO ACTIVE FIELD OPENS THE FILTER LIST, SAME AS RIGHT CLICK.
