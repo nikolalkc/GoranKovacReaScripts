@@ -94,12 +94,19 @@ function Top_Menu()
         if r.ImGui_BeginMenu(ctx, 'View') then
             if r.ImGui_MenuItem(ctx, 'Gray Background', '', BG_COLOR_MODE == "gray") then
                 BG_COLOR_MODE = "gray"
+                SaveViewSettings()
             end
             if r.ImGui_MenuItem(ctx, 'Dark Background', '', BG_COLOR_MODE == "dark") then
                 BG_COLOR_MODE = "dark"
+                SaveViewSettings()
             end
             if r.ImGui_MenuItem(ctx, 'Legacy Background', '', BG_COLOR_MODE == "legacy") then
                 BG_COLOR_MODE = "legacy"
+                SaveViewSettings()
+            end
+            r.ImGui_Separator(ctx)
+            if r.ImGui_MenuItem(ctx, 'Grid Brightness...') then
+                GRID_BRIGHTNESS_POPUP = true
             end
             r.ImGui_EndMenu(ctx)
         end
@@ -1205,6 +1212,31 @@ function Popups()
     r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x252526FF) -- REAPER 7: dark charcoal popup bg
     if r.ImGui_BeginPopup(ctx, "Help") then
         r.ImGui_Text(ctx, table.concat(help_tbl, "\n"))
+        r.ImGui_EndPopup(ctx)
+    end
+    r.ImGui_PopStyleColor(ctx)
+
+    if GRID_BRIGHTNESS_POPUP then
+        r.ImGui_OpenPopup(ctx, "GRID BRIGHTNESS")
+        GRID_BRIGHTNESS_POPUP = nil
+    end
+    r.ImGui_SetNextWindowPos(ctx, center[1], center[2], r.ImGui_Cond_Appearing(), 0.5, 0.5)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x252526FF) -- REAPER 7: dark charcoal popup bg
+    if r.ImGui_BeginPopupModal(ctx, 'GRID BRIGHTNESS', nil, r.ImGui_WindowFlags_AlwaysAutoResize() | r.ImGui_WindowFlags_TopMost()) then
+        r.ImGui_Text(ctx, "Darken / lighten the canvas grid lines")
+        r.ImGui_SetNextItemWidth(ctx, 250)
+        local GB_RV
+        GB_RV, GRID_BRIGHTNESS = r.ImGui_SliderInt(ctx, "##GRID_BRIGHTNESS", GRID_BRIGHTNESS, -100, 100,
+            GRID_BRIGHTNESS == 0 and "Default" or (GRID_BRIGHTNESS > 0 and "+%d%%" or "%d%%"))
+        if GB_RV then SaveViewSettings() end
+        if r.ImGui_Button(ctx, "Reset") then
+            GRID_BRIGHTNESS = 0
+            SaveViewSettings()
+        end
+        r.ImGui_SameLine(ctx)
+        if r.ImGui_Button(ctx, "Close") or r.ImGui_IsKeyPressed(ctx, r.ImGui_Key_Escape()) then
+            r.ImGui_CloseCurrentPopup(ctx)
+        end
         r.ImGui_EndPopup(ctx)
     end
     r.ImGui_PopStyleColor(ctx)

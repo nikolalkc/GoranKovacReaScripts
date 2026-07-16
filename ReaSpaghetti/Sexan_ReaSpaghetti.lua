@@ -56,6 +56,7 @@ if r.file_exists(r.GetResourcePath() .. "/UserPlugins/ultraschall_api.lua") then
 end
 
 FLUX = require("Modules/flux")
+THEME = require("Modules/lkc_theme_colors")
 BEZIER = require("Modules/path2d_bezier3")
 BEZIER_HIT = require("Modules/path2d_bezier3_hit")
 require("Modules/APIParser")
@@ -82,6 +83,41 @@ local function UpdateDeltaTime()
     FLUX.update(DT)
 end
 
+-- THEME ADAPTATION: run base colors through REAPER's theme-adjuster params
+-- (gamma/shadows/midtones/highlights/saturation/tint). Adapted colors are
+-- cached and only recomputed when the theme params change.
+-- Globals shared with drawing modules (NodeDraw themes node/pin/wire colors):
+-- ThemeApply(col, influence) adapts a color, THEME_SIG changes whenever the
+-- theme params change so modules can invalidate their own caches.
+THEME_BG_INFLUENCE, THEME_ACC_INFLUENCE = 0.45, 0.85
+THEME_SIG = 0
+local BG_INFLUENCE, ACC_INFLUENCE = THEME_BG_INFLUENCE, THEME_ACC_INFLUENCE
+local theme_cache, theme_sig = {}, nil
+local SCHEME = THEME.Scheme() -- bg colors anchored to REAPER's theme (like ContentNavigator)
+
+function ThemeApply(col, influence)
+    local key = (influence or 1) .. ":" .. col
+    local c = theme_cache[key]
+    if not c then
+        c = THEME.Apply(col, influence)
+        theme_cache[key] = c
+    end
+    return c
+end
+local TA = ThemeApply
+
+local function RefreshTheme()
+    THEME.Refresh()
+    SCHEME = THEME.Scheme()
+    local prm = THEME.Params()
+    local sig = prm.gamma .. "|" .. prm.shadows .. "|" .. prm.midtones .. "|"
+        .. prm.highlights .. "|" .. prm.saturation .. "|" .. prm.tint
+    if sig ~= theme_sig then
+        theme_sig, theme_cache = sig, {}
+        THEME_SIG = sig
+    end
+end
+
 local function frame()
     Top_Menu()
     if r.ImGui_BeginChild(ctx, "SideListMain", 240, 0) then
@@ -98,11 +134,12 @@ local function frame()
 
     local BG_COLOR
     if BG_COLOR_MODE == "dark" then
-        BG_COLOR = BG_COLOR_DARK
+        BG_COLOR = TA(BG_COLOR_DARK, BG_INFLUENCE)
     elseif BG_COLOR_MODE == "legacy" then
-        BG_COLOR = BG_COLOR_LEGACY
+        BG_COLOR = TA(BG_COLOR_LEGACY, BG_INFLUENCE)
     else
-        BG_COLOR = BG_COLOR_GRAY
+        -- default gray tracks REAPER's theme background, same as ContentNavigator
+        BG_COLOR = SCHEME.wnd_bg
     end
     r.ImGui_PushStyleColor(ctx, r.ImGui_Col_ChildBg(), BG_COLOR)
 
@@ -193,36 +230,38 @@ local function loop()
     -- r.ImGui_PushStyleColor(ctx, r.ImGui_Col_TextSelectedBg(),       0x42FA8459)
     -- r.ImGui_PushStyleColor(ctx, r.ImGui_Col_NavCursor(),            0x42FA6EFF)
 
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_WindowBg(), 0x333333ff)
-    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), 0x333333ff)
-    r.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TitleBgActive(), 0x2D4F47FF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGripHovered(), 0x42FAD1AB)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGripActive(), 0x42FAD1F2)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGrip(), 0x42FAD133)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Tab(), 0x42FAD14F)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TabHovered(), 0x33AD92FF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TabActive(), 0x3B9D87FF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TabUnfocused(), 0x112622F8)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TabUnfocusedActive(), 0x236C5CFF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), 0x33AD92FF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), 0x0FFAC5FF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBg(), 0x297A688A)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBgHovered(), 0x42FAD166)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBgActive(), 0x42FAD1AB)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TitleBgActive(), 0x297A68FF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_CheckMark(), 0x42FAD1FF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SliderGrab(), 0x3DE0BBFF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SliderGrabActive(), 0x42FAD1FF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), 0x42FAD166)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Header(), 0x297A688A)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_HeaderHovered(), 0x42FAD14F)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_HeaderActive(), 0x42FAD14F)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Separator(), 0x6E807C80)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SeparatorHovered(), 0x1ABF9AC7)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SeparatorActive(), 0x1ABF9AFF)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_DockingPreview(), 0x42FAD1B3)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TextSelectedBg(), 0x42FAD159)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_NavHighlight(), 0x42FAD1FF)
+    RefreshTheme()
+    local BG, ACC = BG_INFLUENCE, ACC_INFLUENCE
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_WindowBg(), SCHEME.wnd_bg)
+    r.ImGui_PushStyleColor(ctx, r.ImGui_Col_PopupBg(), SCHEME.wnd_bg)
+    r.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TitleBgActive(), TA(0x2D4F47FF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGripHovered(), TA(0x42FAD1AB, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGripActive(), TA(0x42FAD1F2, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ResizeGrip(), TA(0x42FAD133, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Tab(), TA(0x42FAD14F, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TabHovered(), TA(0x33AD92FF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TabActive(), TA(0x3B9D87FF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TabUnfocused(), TA(0x112622F8, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TabUnfocusedActive(), TA(0x236C5CFF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), TA(0x33AD92FF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(), TA(0x0FFAC5FF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBg(), TA(0x297A688A, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBgHovered(), TA(0x42FAD166, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_FrameBgActive(), TA(0x42FAD1AB, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TitleBgActive(), TA(0x297A68FF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_CheckMark(), TA(0x42FAD1FF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SliderGrab(), TA(0x3DE0BBFF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SliderGrabActive(), TA(0x42FAD1FF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(), TA(0x42FAD166, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Header(), TA(0x297A688A, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_HeaderHovered(), TA(0x42FAD14F, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_HeaderActive(), TA(0x42FAD14F, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Separator(), TA(0x6E807C80, BG))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SeparatorHovered(), TA(0x1ABF9AC7, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_SeparatorActive(), TA(0x1ABF9AFF, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_DockingPreview(), TA(0x42FAD1B3, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_TextSelectedBg(), TA(0x42FAD159, ACC))
+    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_NavHighlight(), TA(0x42FAD1FF, ACC))
 
 
 

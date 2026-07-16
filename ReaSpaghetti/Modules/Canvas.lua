@@ -95,6 +95,16 @@ function UpdateZoom()
     CANVAS.scale = new_scale
 end
 
+-- SCALE GRID COLOR RGB BY GRID_BRIGHTNESS (-100..100, 0 = UNCHANGED)
+local function ApplyGridBrightness(col)
+    if not GRID_BRIGHTNESS or GRID_BRIGHTNESS == 0 then return col end
+    local f = 1 + GRID_BRIGHTNESS / 100
+    local rr = math.min(255, math.floor(((col >> 24) & 0xFF) * f + 0.5))
+    local gg = math.min(255, math.floor(((col >> 16) & 0xFF) * f + 0.5))
+    local bb = math.min(255, math.floor(((col >> 8) & 0xFF) * f + 0.5))
+    return (rr << 24) | (gg << 16) | (bb << 8) | (col & 0xFF)
+end
+
 local function DrawGrid()
     if not GRID then return end
 
@@ -110,6 +120,7 @@ local function DrawGrid()
     else
         grid_color = GRID_COLOR_GRAY
     end
+    grid_color = ApplyGridBrightness(grid_color)
     local x = math.fmod(CANVAS.off_x, GRID_STEP)
     while x < CANVAS_sz[1] do
         r.ImGui_DrawList_AddLine(DL, CANVAS_p0[1] + x, CANVAS_p0[2], CANVAS_p0[1] + x, CANVAS_p1[2], grid_color)

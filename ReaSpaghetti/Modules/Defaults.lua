@@ -22,6 +22,25 @@ BG_COLOR_LEGACY = 0xACAEAEff -- legacy light bg (rgb 220,222,222)
 GRID_COLOR_GRAY   = 0x404040ff -- rgb 64,64,64
 GRID_COLOR_DARK   = 0x2A2A2Aff -- rgb 42,42,42
 GRID_COLOR_LEGACY = 0x8E9090ff -- slightly darker than legacy bg
+GRID_BRIGHTNESS   = 0          -- -100 (darker) .. 100 (lighter), 0 = theme default
+
+-- RESTORE PERSISTED VIEW SETTINGS (saved by SaveViewSettings below)
+do
+    local mode = reaper.GetExtState("ReaSpaghetti", "BG_COLOR_MODE")
+    if mode == "gray" or mode == "dark" or mode == "legacy" then
+        BG_COLOR_MODE = mode
+    end
+    local gb = tonumber(reaper.GetExtState("ReaSpaghetti", "GRID_BRIGHTNESS"))
+    if gb then
+        GRID_BRIGHTNESS = math.max(-100, math.min(100, math.floor(gb)))
+    end
+end
+
+-- CALL WHENEVER A VIEW SETTING CHANGES (View menu / Grid Brightness modal)
+function SaveViewSettings()
+    reaper.SetExtState("ReaSpaghetti", "BG_COLOR_MODE", BG_COLOR_MODE, true)
+    reaper.SetExtState("ReaSpaghetti", "GRID_BRIGHTNESS", tostring(GRID_BRIGHTNESS), true)
+end
 
 -- LEGACY (CLASSIC) THEME NODE COLORS - matches old light UI reference
 NODE_TEXT_COLOR_LEGACY   = 0x000000FF -- black text

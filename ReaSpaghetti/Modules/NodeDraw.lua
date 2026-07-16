@@ -38,12 +38,42 @@ local NODE_CFG = {
     INPUT_OFFSET = 70
 }
 
+-- THEME ADAPTATION: node/pin/wire colors run through REAPER's theme adjuster
+-- via ThemeApply (defined in the main script; nil in standalone runs, where
+-- nothing is drawn). Themed copies of the color tables are cached and only
+-- rebuilt when THEME_SIG changes.
+local themed_tbls, themed_sig = {}, nil
+local BG_KEYS = { bg = true, groupbg = true } -- body colors get bg influence, rest accent
+
+local function TA1(col) -- theme a single accent color (nil passes through)
+    if not col or not ThemeApply then return col end
+    return ThemeApply(col, THEME_ACC_INFLUENCE)
+end
+
+local function ThemedTBL(base)
+    if not ThemeApply then return base end
+    if themed_sig ~= THEME_SIG then themed_tbls, themed_sig = {}, THEME_SIG end
+    local t = themed_tbls[base]
+    if not t then
+        t = {}
+        for k, v in pairs(base) do
+            t[k] = ThemeApply(v, BG_KEYS[k] and THEME_BG_INFLUENCE or THEME_ACC_INFLUENCE)
+        end
+        local mt = getmetatable(base)
+        if mt and mt.__index then
+            setmetatable(t, { __index = function(_, k) return TA1(mt.__index(base, k)) end })
+        end
+        themed_tbls[base] = t
+    end
+    return t
+end
+
 local function GetLabelColor()
-    return BG_COLOR_MODE == "legacy" and NODE_CFG.LABEL_COL_LEGACY or NODE_CFG.LABEL_COL
+    return TA1(BG_COLOR_MODE == "legacy" and NODE_CFG.LABEL_COL_LEGACY or NODE_CFG.LABEL_COL)
 end
 
 local function GetPinLabelColor()
-    return BG_COLOR_MODE == "legacy" and NODE_CFG.PIN_LABEL_COL_LEGACY or NODE_CFG.PIN_LABEL_COL
+    return TA1(BG_COLOR_MODE == "legacy" and NODE_CFG.PIN_LABEL_COL_LEGACY or NODE_CFG.PIN_LABEL_COL)
 end
 
 WIRE_COL = 0x15BC99FF  -- REAPER green wire
@@ -319,7 +349,7 @@ local NodeCOLOR_LEGACY = setmetatable({
 }, { __index = function() return NODE_HEADER_COLOR_LEGACY end })
 
 local function GetNodeCOLOR()
-    return BG_COLOR_MODE == "legacy" and NodeCOLOR_LEGACY or NodeCOLOR_DARK
+    return ThemedTBL(BG_COLOR_MODE == "legacy" and NodeCOLOR_LEGACY or NodeCOLOR_DARK)
 end
 
 local PinCOLOR = {
@@ -1060,13 +1090,13 @@ local function Draw_Beziar(xs, ys, xe, ye, color, th, link, node_o, node_i, pin_
     end
     if pins_o or pins_i then
         if (pins_o.trace or pins_i.trace) then
-            if ALT_DOWN then color = DELETE_COL end
+            if ALT_DOWN then color = TA1(DELETE_COL) end
             th = 10 * CANVAS.scale
         end
     end
 
     if ALT_DOWN and mouse_on_baz then
-        color = DELETE_COL
+        color = TA1(DELETE_COL)
         -- DELETE ONLY THIS WIRE
         if r.ImGui_IsMouseClicked(ctx, 0) then
             AddUndo("DELETE_WIRE")
@@ -1092,7 +1122,7 @@ local function Draw_Beziar(xs, ys, xe, ye, color, th, link, node_o, node_i, pin_
     -- CAN STRAIGHTEN IT USING THE EXACT PIN POSITIONS (ys = output, ye = input).
     local sel = SEL_WIRES[link]
     if sel then
-        color = SEL_WIRE_COL
+        color = TA1(SEL_WIRE_COL)
         th = 6 * CANVAS.scale
         sel.out_y = ys
         sel.in_y = ye
@@ -1108,6 +1138,7 @@ local function Draw_Wire(node, src_outputs)
     r.ImGui_DrawListSplitter_SetCurrentChannel(SPLITTER, 0)
     local NODES = GetNodeTBL()
     local thick = 3.5 * CANVAS.scale
+    local PC = ThemedTBL(PinCOLOR)
     for i = 0, #src_outputs do
         local output = src_outputs[i]
         if output then
@@ -1119,7 +1150,7 @@ local function Draw_Wire(node, src_outputs)
                     local input = input_node.inputs[dst_data.pin]
                     if HasConnection(input_node.inputs[dst_data.pin].connection, link_guid) then
                         Draw_Beziar(output.x, output.y, input.x, input.y,
-                            PinCOLOR[output.type] or PinCOLOR["UNKNOWN"],
+                            PC[output.type] or PC["UNKNOWN"],
                             thick, --WIRE_COL
                             link_guid, node, input_node, output.label, input, output)
                     end
@@ -1167,14 +1198,15 @@ local function Draw_Pin_Button(dl, pin_tbl, name, node_id, pin_id, pin_type, x, 
     -- PIN BUTTON FOR DEBUGGING
     r.ImGui_InvisibleButton(ctx, "##" .. node_id .. pin_type .. pin_id, btn_w, btn_h * 2)
 
-    local color = PinCOLOR[pin_tbl.type] or PinCOLOR["UNKNOWN"]
+    local PC = ThemedTBL(PinCOLOR)
+    local color = PC[pin_tbl.type] or PC["UNKNOWN"]
 
     local is_active = r.ImGui_IsItemActive(ctx) or
         r.ImGui_IsItemHovered(ctx, r.ImGui_HoveredFlags_AllowWhenBlockedByActiveItem())
 
     local is_connected = #pin_tbl.connection > 0
 
-    color = (is_active and ALT_DOWN) and DELETE_COL or color
+    color = (is_active and ALT_DOWN) and TA1(DELETE_COL) or color
 
     color = (pin_tbl.opt and pin_tbl.opt.use == false) and (color & ~0x000000DD) or color
 
@@ -1192,7 +1224,7 @@ local function Draw_Pin_Button(dl, pin_tbl, name, node_id, pin_id, pin_type, x, 
     if pin_tbl.type == "NUMBER/INTEGER" then
         r.ImGui_DrawList_AddRectFilledMultiColor(dl, x + (pin_type == "in" and -move_out or move_out) - s, y - s,
             x + (pin_type == "in" and -move_out or move_out) + s, y + s,
-            0xF44336FF, 0xfdad5aFF, 0xfdad5aFF, 0xF44336FF)
+            TA1(0xF44336FF), TA1(0xfdad5aFF), TA1(0xfdad5aFF), TA1(0xF44336FF))
     end
 end
 
@@ -1616,7 +1648,7 @@ local function Draw_IO(active_ch, node, pins, x, y, pin_type)
                         pin_type == "out" and py or new_MY,
                         pin_type == "out" and new_MX + (NODE_CFG.PIN_MOVE_OUT * CANVAS.scale) or x,
                         pin_type == "out" and new_MY or py,
-                        PinCOLOR[pin.type] or PinCOLOR["UNKNOWN"], 5)
+                        ThemedTBL(PinCOLOR)[pin.type] or ThemedTBL(PinCOLOR)["UNKNOWN"], 5)
                 end
 
                 if r.ImGui_IsItemClicked(ctx, 0) and ALT_DOWN then
@@ -1994,7 +2026,7 @@ local function Draw_Node(node)
 
     -- TITLE BG
     r.ImGui_DrawList_AddRectFilled(DL, x, y, xe, y + title_h - 2 * CANVAS.scale,
-        node.rgba ~= 0x00000000 and node.rgba or node_color[node.type],
+        node.rgba ~= 0x00000000 and TA1(node.rgba) or node_color[node.type],
         NODE_CFG.ROUND_CORNER * CANVAS.scale, has_body and r.ImGui_DrawFlags_RoundCornersTop() or 0)
 
     if sel then
