@@ -120,13 +120,20 @@ end
 
 local function frame()
     Top_Menu()
-    if r.ImGui_BeginChild(ctx, "SideListMain", 240, 0) then
-        if r.ImGui_BeginChild(ctx, "SideListChild", 0, -25, 1) then
-            Sidebar()
-            r.ImGui_EndChild(ctx)
+    local sidebar_w = SIDEBAR_COLLAPSED and 24 or SIDEBAR_WIDTH
+    if r.ImGui_BeginChild(ctx, "SideListMain", sidebar_w, 0) then
+        if r.ImGui_Button(ctx, SIDEBAR_COLLAPSED and ">" or "<", -FLT_MIN, 19) then
+            SIDEBAR_COLLAPSED = not SIDEBAR_COLLAPSED
+            SaveViewSettings()
         end
-        r.ImGui_SetNextItemWidth(ctx, 200)
-        r.ImGui_LabelText(ctx, "##INFO", "Nodes:" .. #GetNodeTBL() .. " Selected:" .. #CntSelNodes())
+        if not SIDEBAR_COLLAPSED then
+            if r.ImGui_BeginChild(ctx, "SideListChild", 0, -25, 1) then
+                Sidebar()
+                r.ImGui_EndChild(ctx)
+            end
+            r.ImGui_SetNextItemWidth(ctx, 200)
+            r.ImGui_LabelText(ctx, "##INFO", "Nodes:" .. #GetNodeTBL() .. " Selected:" .. #CntSelNodes())
+        end
         r.ImGui_EndChild(ctx)
     end
     r.ImGui_SameLine(ctx)
