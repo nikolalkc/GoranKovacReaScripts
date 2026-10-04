@@ -1,9 +1,9 @@
--- @description ReaSpaghetti Visual Scripter
+-- @description LKC Mertz - Patch Editor (ReaSpaghetti)
 -- @author Sexan, LKC
 -- @license GPL v3
--- @version 0.49.3
+-- @version 0.49.4
 -- @changelog
---  Improve data serializer to handle inf,-inf,nan (hopefully) V2
+--  Rename to new fork version
 -- @provides
 --   api_file.txt
 --   Modules/*.lua
@@ -12,7 +12,7 @@
 --   ExportedActions/dummy.lua
 --   Docs/*.pdf
 --   Examples/SCHWA/*.png
---   [main] Sexan_ReaSpaghetti.lua
+--   [main] LKC - Mertz - Patch Editor (ReaSpaghetti).lua
 
 package.path = debug.getinfo(1, "S").source:match [[^@?(.*[\/])[^\/]-$]] .. "?.lua;" -- GET DIRECTORY FOR REQUIRE
 PATH = debug.getinfo(1).source:match("@?(.*[\\|/])")
@@ -26,7 +26,7 @@ end
 dofile(r.GetResourcePath() .. '/Scripts/ReaTeam Extensions/API/imgui.lua')('0.8.7')
 
 -- IMGUI SETUP
-ctx = r.ImGui_CreateContext('ReaSpaghetti')
+ctx = r.ImGui_CreateContext('MERTZ')
 
 require("Modules/Defaults")
 
@@ -280,7 +280,7 @@ local function loop()
     r.ImGui_PushStyleVar(ctx, r.ImGui_StyleVar_ItemSpacing(),   5, 2)
     r.ImGui_SetNextWindowSizeConstraints(ctx, 1100, 500, FLT_MAX, FLT_MAX)
     r.ImGui_SetNextWindowSize(ctx, 1000, 800, r.ImGui_Cond_FirstUseEver())
-    local visible, open = r.ImGui_Begin(ctx, 'ReaSpaghetti - ALPHA - ' .. PROJECT_NAME .. '###ReaSpaghetti', true,
+    local visible, open = r.ImGui_Begin(ctx, 'MERTZ - ALPHA - ' .. PROJECT_NAME .. '###MERTZ', true,
         WND_FLAGS)
     TOOLBAR_DRAG = r.ImGui_IsItemHovered(ctx)
     if visible then
