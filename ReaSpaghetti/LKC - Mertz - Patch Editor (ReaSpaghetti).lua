@@ -1,9 +1,9 @@
 -- @description LKC Mertz - Patch Editor (ReaSpaghetti)
 -- @author Sexan, LKC
 -- @license GPL v3
--- @version 0.49.4
+-- @version 0.49.5
 -- @changelog
---  Rename to new fork version
+--  API functions and signatures update
 -- @provides
 --   api_file.txt
 --   Modules/*.lua
